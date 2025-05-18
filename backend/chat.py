@@ -56,7 +56,7 @@ class LLM_Chat():
         self.stop = False
 
     def chat(self, message=None):
-        if self.stop: return json.dumps({"type": "error", "content": "会话已结束请,刷新页面重新开始"})
+        if self.stop: return json.dumps({"type": "error", "content": "会话已结束,请刷新页面重新开始"})
         if message:
             try:
                 # 没有继续的instr，就是None
@@ -75,7 +75,7 @@ class LLM_Chat():
         try:
             return json.dumps({"type": "chat", "content": self.get_chat_text()})
         except ValueError as e:
-            return json.dumps({"type": "chat", "content": str(e)})
+            return json.dumps({"type": "error", "content": str(e)})
 
     def chat_start(self):
         self.reset()
@@ -90,16 +90,16 @@ class LLM_Chat():
                 self.idx += 1
             else:
                 self.stop = True
-                raise ValueError("没有更多的内容可以聊天了")
+                raise ValueError("会话已结束,请刷新页面重新开始")
         self.instr = self.instr.strip()
         if self.instr.startswith('chat:'):
             self.action = Chat(self.instr[5:].strip())
             if new_resp: self.resp = Chat_Resp()
         elif self.instr.startswith('exam:'):
-            self.action = Chat(self.instr[5:].strip())
+            self.action = Exam(self.instr[5:].strip())
             if new_resp: self.resp = Exam_Resp()
         elif self.instr.startswith('name:'):
-            self.action = Chat(self.instr[5:].strip())
+            self.action = Name(self.instr[5:].strip())
             if new_resp: self.resp = Name_Resp()
         else:
             print(self.instr)

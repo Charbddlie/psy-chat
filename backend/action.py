@@ -33,13 +33,12 @@ class Action(ABC):
         self.text = text
         self.suffix = suffix
 
-    @abstractmethod
     def execute(self, chat_dict):
         text = format_output(self.text, chat_dict)
         return text + self.suffix, None, None
 
 with open('settings.toml', 'rb') as f:
-    settings = tomli.load(f)
+    settings = tomli.load(f)['suffix']
 
 class Chat(Action):
     def __init__(self, text=None):
