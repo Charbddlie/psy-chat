@@ -1,1 +1,8 @@
 log_dir = "log"
+websocket_host = "localhost"
+websocket_port = 8765
+
+[suffix]
+chat = '请输入(有/没有)'
+exam = '请按以下格式回答：(1.xx 2.xx 3.xx)'
+name = '请直接输入姓名'
