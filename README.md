@@ -7,5 +7,5 @@ python main.py
 
 ```
 cd psy-front
-np
+npm run serve
 ```
