@@ -40,7 +40,7 @@ class LLM_Chat():
             self.content = f.readlines()
         self.chat_dict = {}
         log_dir = tomli.load(open('settings.toml', 'rb'))['log_dir']
-        self.log_path = f'{log_dir}/{self.file_name}_{datetime.now().strftime('%Y%m%d-%H%M%S')}.tsv'
+        self.log_path = f'{log_dir}/{self.file_name}_{datetime.now().strftime("%Y%m%d-%H%M%S")}.tsv'
         self.idx = 0
         self.instr = None
         self.action = None
@@ -48,7 +48,7 @@ class LLM_Chat():
         self.stop = False
 
     def reset(self):
-        self.log_path = f'{log_dir}/{self.file_name}_{datetime.now().strftime('%Y%m%d-%H%M%S')}.tsv'
+        self.log_path = f'{log_dir}/{self.file_name}_{datetime.now().strftime("%Y%m%d-%H%M%S")}.tsv'
         self.idx = 0
         self.instr = None
         self.action = None
