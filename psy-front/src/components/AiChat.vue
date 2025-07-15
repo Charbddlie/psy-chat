@@ -1,5 +1,12 @@
 <template>
   <div class="ai-chat-container">
+    <!-- 错误弹窗 -->
+    <div v-if="errorMessage" class="error-modal">
+      <div class="error-modal-content">
+        <span class="error-modal-close" @click="errorMessage = ''">&times;</span>
+        <div class="error-modal-text">{{ errorMessage }}</div>
+      </div>
+    </div>
     <div class="chat-messages" ref="messageContainer">
       <div v-for="(message, index) in messages" :key="index" 
            :class="['message', message.isUser ? 'user-message' : 'ai-message']">
@@ -27,7 +34,8 @@ export default {
       messages: [],
       loading: false,
       socket: null,
-      connected: false
+      connected: false,
+      errorMessage: ''
     }
   },
   created() {
@@ -46,7 +54,7 @@ export default {
         console.log('WebSocket连接已建立');
         this.connected = true;
         // 发送start消息启动聊天会话
-        this.socket.send(JSON.stringify({ type: 'start' }));
+        this.socket.send(JSON.stringify({ type: 'create', topic: 'thunder', sociability: 'high', initiativity: 'low' }));
       };
       
       this.socket.onmessage = (event) => {
@@ -54,21 +62,25 @@ export default {
         console.log('收到服务器消息:', response);
         this.loading = false
         
-        if (response.content) {
-          this.messages.push({
-            content: response.content,
-            isUser: false
-          });
-          this.scrollToBottom();
-        }
+        switch (response.type) {
+          case 'created':
+            this.chat_id = response.chat_id;
+            break;
+          case 'chat':
+            if (response.content) {
+              this.messages.push({
+                content: response.content,
+                isUser: false
+              });
+              this.scrollToBottom();
+            }
+          }
+          console.log('收到服务器消息:', response);
       };
       
       this.socket.onerror = (error) => {
         console.error('WebSocket错误:', error);
-        this.messages.push({
-          content: '连接错误，请检查服务器是否运行',
-          isUser: false
-        });
+        this.showError('连接错误，请检查服务器是否运行');
       };
       
       this.socket.onclose = () => {
@@ -93,6 +105,7 @@ export default {
       if (this.connected) {
         this.socket.send(JSON.stringify({
           type: 'chat',
+          chat_id: this.chat_id,
           content: userMessage
         }));
       } else {
@@ -102,13 +115,11 @@ export default {
           if (this.connected) {
             this.socket.send(JSON.stringify({
               type: 'chat',
+              chat_id: this.chat_id,
               content: userMessage
             }));
           } else {
-            this.messages.push({
-              content: '无法连接到服务器',
-              isUser: false
-            });
+            this.showError('无法连接到服务器');
             this.loading = false;
           }
         }, 1000);
@@ -118,10 +129,7 @@ export default {
       setTimeout(() => {
         if (this.loading) {
           this.loading = false;
-          this.messages.push({
-            content: '服务器响应超时',
-            isUser: false
-          });
+          this.showError('服务器响应超时');
           this.scrollToBottom();
         }
       }, 10000);
@@ -132,6 +140,9 @@ export default {
           this.$refs.messageContainer.scrollTop = this.$refs.messageContainer.scrollHeight;
         }
       });
+    },
+    showError(msg) {
+      this.errorMessage = msg;
     }
   },
 }
@@ -218,5 +229,41 @@ button {
 
 button:hover {
   background-color: #1976d2;
+}
+
+/* 错误弹窗样式 */
+.error-modal {
+  position: fixed;
+  z-index: 9999;
+  left: 0; top: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.error-modal-content {
+  background: #fff;
+  padding: 24px 32px;
+  border-radius: 10px;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.15);
+  min-width: 260px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.error-modal-close {
+  position: absolute;
+  right: 12px;
+  top: 8px;
+  font-size: 22px;
+  color: #888;
+  cursor: pointer;
+}
+.error-modal-text {
+  color: #d32f2f;
+  font-size: 16px;
+  margin-top: 8px;
+  text-align: center;
 }
 </style>
