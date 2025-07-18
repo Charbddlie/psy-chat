@@ -13,11 +13,11 @@ import os
 import openai
 
 log_dir = tomli.load(open('settings.toml', 'rb'))['log_dir']
-os.makedirs(log_dir, exist_ok=True)
 # tsv_filename = None
 last_time = None
 def log(role, text, log_path):
     global last_time
+    os.makedirs(log_dir, exist_ok=True)
     time = datetime.now()
     if not last_time: last_time = time
     resp_time = f"{(time - last_time).total_seconds():.2f}"

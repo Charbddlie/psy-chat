@@ -1,18 +1,24 @@
 <template>
-  <!-- <img alt="Vue logo" src="./assets/logo.png"> -->
-  <!-- <HelloWorld msg="Welcome to Your Vue.js App"/> -->
-  <AiChat />
+  <div>
+    <InfoCollect v-if="!infoCollectSubmitted" @submitted="infoCollectSubmitted = true" />
+    <AiChat v-if="infoCollectSubmitted && !AIChatComplete" @chatComplete="AIChatComplete = true"/>
+    <PostQuestionnaire v-if="AIChatComplete" />
+  </div>
 </template>
 
 <script>
-// import HelloWorld from './components/HelloWorld.vue'
-import AiChat from '@/components/AiChat.vue'
+import AiChat from '@/components/AIChat.vue'
+import InfoCollect from '@/components/InfoCollect.vue'
+import PostQuestionnaire from './components/PostQuestionnaire.vue'
 
 export default {
   name: 'App',
-  components: {
-    // HelloWorld,
-    AiChat
+  components: { AiChat, InfoCollect, PostQuestionnaire},
+ data() {
+    return {
+      infoCollectSubmitted: false,
+      AIChatComplete: false
+    }
   }
 }
 </script>

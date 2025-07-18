@@ -39,7 +39,8 @@ export default {
       chat_id: '',
       socket: null,
       connected: false,
-      errorMessage: ''
+      errorMessage: '',
+      chatComplete: false,
     }
   },
   created() {
