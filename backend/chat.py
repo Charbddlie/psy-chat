@@ -55,6 +55,7 @@ class LLM_Chat():
         openai.base_url = settings['base_url']
 
         self.model_name = settings['model_name'] if 'model_name' in settings else 'o4-mini'
+        self.start_time = datetime.now()
 
 
     def chat(self, message=None):
@@ -65,8 +66,18 @@ class LLM_Chat():
 
         # 如果有用户输入，加入历史
         elif message != None:
-            self.history.append({"role": "user", "content": message})
-            log("user", message, self.log_path)
+            # 在message后加上json格式的{time_spent: xx minutes}
+            from datetime import datetime
+            now = datetime.now()
+            if hasattr(self, 'start_time'):
+                time_spent = (now - self.start_time).total_seconds() // 60
+            else:
+                self.start_time = now
+                time_spent = 0
+            # 拼接message和time_spent信息
+            message_with_time = f"{message}\n{{\"time_spent\": {int(time_spent)} minutes}}"
+            self.history.append({"role": "user", "content": message_with_time})
+            log("user", message_with_time, self.log_path)
 
         # 流式传输
         try:
