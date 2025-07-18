@@ -11,6 +11,7 @@ export default createStore({
     flowStateEnum: {
       readInfo: 'readInfo',
       collectInfo: 'collectInfo',
+      preTest: 'preTest',
       AIchat: 'AIchat',
       postTest: 'postTest',
       end: 'end',
