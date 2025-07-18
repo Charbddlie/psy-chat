@@ -59,7 +59,11 @@ export default {
         console.log('WebSocket连接已建立');
         this.connected = true;
         // 发送start消息启动聊天会话
-        this.socket.send(JSON.stringify({ type: 'create', sample_name: 'noname' }));
+        this.socket.send(JSON.stringify({ 
+          type: 'create', 
+          sample_name: this.$store.state.userInfo.name || 'noname', 
+          sample_id: this.$store.state.userInfo.id || 'noid'
+        }));
       };
       
       this.socket.onmessage = (event) => {

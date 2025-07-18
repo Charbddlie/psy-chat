@@ -25,8 +25,9 @@ async def websocket_handler(websocket):
                 elif msg_type == "create":
                     # 客户端请求创建新会话，参数在data中
                     sample_name = data.get("sample_name", "default_name")
+                    sample_id = data.get("sample_id", "default_id")
                     chat_id = str(uuid.uuid4())
-                    chat_instance = LLMChatFactory.create_llm_chat(sample_name)
+                    chat_instance = LLMChatFactory.create_llm_chat(sample_name, sample_id)
                     chat_instances[chat_id] = chat_instance
                     print(f"创建新chat实例: chat_id={chat_id}, {chat_instance}")
                     await websocket.send(json.dumps({"type": "created", "chat_id": chat_id}))
