@@ -80,25 +80,25 @@ class LLM_Chat():
             log("user", message_with_time, self.log_path)
 
         # 流式传输
-        try:
-            stream = openai.chat.completions.create(
-                model=self.model_name,
-                messages=self.history,
-                stream=True,
-            )
-            ai_message = ""
-            for chunk in stream:
-                if not chunk.choices: continue
-                delta = getattr(chunk.choices[0].delta, "content", None)
-                if delta:
-                    ai_message += delta
-                    # 实时返回流式内容（可选：如需逐步推送到前端，可yield或通过websocket分片发送）
-                    # 这里只拼接，最终整体返回
-            if not ai_message:
-                raise ValueError("API未返回有效内容")
-        except Exception as e:
-            return json.dumps({"type": "error", "content": f"API请求失败: {e}"})
-
+        # try:
+        #     stream = openai.chat.completions.create(
+        #         model=self.model_name,
+        #         messages=self.history,
+        #         stream=True,
+        #     )
+        #     ai_message = ""
+        #     for chunk in stream:
+        #         if not chunk.choices: continue
+        #         delta = getattr(chunk.choices[0].delta, "content", None)
+        #         if delta:
+        #             ai_message += delta
+        #             # 实时返回流式内容（可选：如需逐步推送到前端，可yield或通过websocket分片发送）
+        #             # 这里只拼接，最终整体返回
+        #     if not ai_message:
+        #         raise ValueError("API未返回有效内容")
+        # except Exception as e:
+        #     return json.dumps({"type": "error", "content": f"API请求失败: {e}"})
+        ai_message = "长"*300
         # 记录AI回复到历史
         self.history.append({"role": "assistant", "content": ai_message})
 

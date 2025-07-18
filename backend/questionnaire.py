@@ -8,7 +8,7 @@ app = FastAPI()
 # 允许本地所有端口的跨域访问
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost", "http://127.0.0.1", "http://localhost:*", "http://127.0.0.1:*", "*"],
+    allow_origins=["http://localhost", "http://127.0.0.1", "http://localhost:*", "http://127.0.0.1:*", "http://192.168.31.190", "http://192.168.31.111", "*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

@@ -57,7 +57,8 @@ async def websocket_handler(websocket):
 async def start_websocket_server():
     """启动WebSocket服务器"""
     settings = tomli.load(open('settings.toml', 'rb'))
-    host = settings.get('websocket_host', 'localhost')
+    # 设置host为"0.0.0.0"以支持局域网所有设备连接
+    host = settings.get('websocket_host', '0.0.0.0')
     port = settings.get('websocket_port', 8765)
 
     print(f"启动WebSocket服务器: ws://{host}:{port}")
