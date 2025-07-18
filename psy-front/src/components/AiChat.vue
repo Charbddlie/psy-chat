@@ -12,9 +12,12 @@
            :class="['message', message.isUser ? 'user-message' : 'ai-message']">
         <div class="message-content">{{ message.content }}</div>
       </div>
+      <div v-if="loading" class="message ai-message">
+        <div class="message-content">AI 正在思考...</div>
+      </div>
     </div>
     <div class="chat-input">
-      <input 
+      <input
         v-model="userInput" 
         @keyup.enter="sendMessage" 
         placeholder="输入消息..." 
@@ -32,7 +35,7 @@ export default {
     return {
       userInput: '',
       messages: [],
-      loading: false,
+      loading: true, //初始化为true，直到ai先说话
       chat_id: '',
       socket: null,
       connected: false,
@@ -61,7 +64,6 @@ export default {
       this.socket.onmessage = (event) => {
         const response = JSON.parse(event.data);
         console.log('收到服务器消息:', response);
-        this.loading = false
         
         switch (response.type) {
           case 'created':
@@ -75,8 +77,8 @@ export default {
               });
               this.scrollToBottom();
             }
+            this.loading = false;
           }
-          console.log('收到服务器消息:', response);
       };
       
       this.socket.onerror = (error) => {
@@ -90,6 +92,7 @@ export default {
       };
     },
     sendMessage() {
+      // console.log(this.loading);
       if (!this.userInput.trim() || this.loading) return;
       
       // Add user message

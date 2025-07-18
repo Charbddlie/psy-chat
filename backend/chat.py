@@ -15,14 +15,19 @@ import openai
 log_dir = tomli.load(open('settings.toml', 'rb'))['log_dir']
 os.makedirs(log_dir, exist_ok=True)
 # tsv_filename = None
-def log(action_name, text, log_path):
+last_time = None
+def log(role, text, log_path):
+    global last_time
     time = datetime.now()
-    
+    if not last_time: last_time = time
+    resp_time = f"{(time - last_time).total_seconds():.2f}"
     # 创建新记录
     record_data = {
-        'action_name': action_name,
-        'text': text[:20],
-        'time': str(time)
+        'role': role,
+        'text_len': str(len(text)),
+        'resp_time': str(resp_time),
+        'time': str(time),
+        'text': text.replace('\n', '\\n'),
     }
     # for k,v in record_data.items():
     #     print(f"{k}: {v}")
@@ -62,6 +67,7 @@ class LLM_Chat():
         # 如果有用户输入，加入历史
         elif message != None:
             self.history.append({"role": "user", "content": message})
+            log("user", message, self.log_path)
 
         # 流式传输
         try:
@@ -168,8 +174,8 @@ class LLM_Chat():
 #             raise ValueError(f"不支持的动作")
         
 #         text, _, self.instr = self.action.execute(self.chat_dict)
-#         action_name = self.action.__class__.__name__
-#         log(action_name, text, self.log_path)
+#         role = self.action.__class__.__name__
+#         log(role, text, self.log_path)
 #         return text
 
 #     def __str__(self):
