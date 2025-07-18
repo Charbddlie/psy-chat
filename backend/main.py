@@ -4,7 +4,7 @@ import json
 import tomli
 import os
 import uuid
-from chat import LLMChatFactory, csv_filename
+from chat import LLMChatFactory
 
 # 存储所有活跃的chat实例
 chat_instances = {}
@@ -24,19 +24,13 @@ async def websocket_handler(websocket):
                     await websocket.send(json.dumps({"type": "pong", "content": "服务器正常"}))
                 elif msg_type == "create":
                     # 客户端请求创建新会话，参数在data中
-                    topic = data.get("topic", "thunder")
-                    sociability = data.get("sociability", "high")
-                    initiativity = data.get("initiativity", "low")
+                    sample_name = data.get("sample_name", "default_name")
                     chat_id = str(uuid.uuid4())
-                    chat_instance = LLMChatFactory.create_llm_chat(
-                        topic=topic,
-                        sociability=sociability,
-                        initiativity=initiativity
-                    )
+                    chat_instance = LLMChatFactory.create_llm_chat(sample_name)
                     chat_instances[chat_id] = chat_instance
                     print(f"创建新chat实例: chat_id={chat_id}, {chat_instance}")
                     await websocket.send(json.dumps({"type": "created", "chat_id": chat_id}))
-                    json_message = chat_instance.chat(data.get("content"))
+                    json_message = chat_instance.chat()
                     await websocket.send(json_message)
                 elif msg_type == "chat":
                     chat_id = data.get("chat_id")

@@ -33,6 +33,7 @@ export default {
       userInput: '',
       messages: [],
       loading: false,
+      chat_id: '',
       socket: null,
       connected: false,
       errorMessage: ''
@@ -54,7 +55,7 @@ export default {
         console.log('WebSocket连接已建立');
         this.connected = true;
         // 发送start消息启动聊天会话
-        this.socket.send(JSON.stringify({ type: 'create', topic: 'thunder', sociability: 'high', initiativity: 'low' }));
+        this.socket.send(JSON.stringify({ type: 'create', sample_name: 'noname' }));
       };
       
       this.socket.onmessage = (event) => {

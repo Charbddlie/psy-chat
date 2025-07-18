@@ -1,6 +1,9 @@
 log_dir = "log"
 websocket_host = "localhost"
 websocket_port = 8765
+api_key = 'sk-3NDFbHCTHJJSTrXEB8A5A489A7Ec44D1B7A9A51d2bE34aDd'
+base_url = 'https://api.vveai.com/v1/'
+model_name = 'o4-mini'
 
 [suffix]
 chat = '请输入(有/没有)'
