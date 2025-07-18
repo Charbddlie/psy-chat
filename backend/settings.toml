@@ -1,4 +1,5 @@
 log_dir = "log"
+info_dir = 'info'
 websocket_host = "localhost"
 websocket_port = 8765
 api_key = 'sk-3NDFbHCTHJJSTrXEB8A5A489A7Ec44D1B7A9A51d2bE34aDd'

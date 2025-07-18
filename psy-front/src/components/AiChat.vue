@@ -90,6 +90,7 @@ export default {
       this.socket.onclose = () => {
         console.log('WebSocket连接已关闭');
         this.connected = false;
+        this.$store.commit('setStateToNext', this.$store.state.flowState);
       };
     },
     sendMessage() {
