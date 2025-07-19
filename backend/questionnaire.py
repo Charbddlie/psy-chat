@@ -1,3 +1,4 @@
+from fastapi import Body
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -39,6 +40,45 @@ async def submit_json(request: Request):
             f.write('\t'.join(required_fields) + '\n')
         f.write('\t'.join([str(data[k]).replace('\t', ' ') for k in required_fields]) + '\n')
     return JSONResponse({"status": "success", "filename": "info.tsv"})
+
+@app.post("/post_questionnaire")
+async def post_questionnaire(data: dict = Body(...)):
+    # 检查必需字段
+    required_fields = ["userId", "userName", "time", "subjective", "knowledge", "system"]
+    for field in required_fields:
+        if field not in data:
+            return JSONResponse({"status": "error", "msg": f"缺少字段: {field}"}, status_code=400)
+    # 目录名: {userName}_{userId}
+    dir_name = f"{data['userName']}_{data['userId']}"
+    dir_path = os.path.join(LOG_DIR, dir_name)
+    os.makedirs(dir_path, exist_ok=True)
+    file_path = os.path.join(dir_path, "post.json")
+    # 存储为json
+    import json
+    with open(file_path, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+    return JSONResponse({"status": "success", "filename": f"{dir_name}/post.json"})
+
+@app.post("/pre_questionnaire")
+async def pre_questionnaire(data: dict = Body(...)):
+    # 检查必需字段
+    required_fields = [
+        "userId", "userName", "time", "excluded",
+        "knowledge", "aiScale", "affect"
+    ]
+    for field in required_fields:
+        if field not in data:
+            return JSONResponse({"status": "error", "msg": f"缺少字段: {field}"}, status_code=400)
+    # 目录名: {userName}_{userId}
+    dir_name = f"{data['userName']}_{data['userId']}"
+    dir_path = os.path.join(LOG_DIR, dir_name)
+    os.makedirs(dir_path, exist_ok=True)
+    file_path = os.path.join(dir_path, "pre.json")
+    # 存储为json
+    import json
+    with open(file_path, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+    return JSONResponse({"status": "success", "filename": f"{dir_name}/pre.json"})
 
 if __name__ == "__main__":
     import uvicorn

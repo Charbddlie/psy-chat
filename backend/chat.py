@@ -46,8 +46,7 @@ class LLM_Chat():
         self.sample_name = sample_name
         self.sample_id = sample_id
         settings = tomli.load(open('settings.toml', 'rb'))
-        log_dir = settings['log_dir']
-        self.log_path = f'{log_dir}/{self.sample_name}_{sample_id}.tsv'
+        self.log_path = f"{settings['log_dir']}/{sample_name}_{sample_id}/chat.tsv"
         with open('thunder_prompt.txt', 'r', encoding='utf8') as f:
             self.prompt = f.read()
         # 支持自定义 API key 和 base url

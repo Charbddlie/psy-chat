@@ -2,6 +2,7 @@
   <div>
     <InfoRead v-if="flowState === flowStateEnum.readInfo" />
     <InfoCollect v-if="flowState === flowStateEnum.collectInfo" />
+    <PreQuestionnaire v-if="flowState === flowStateEnum.preTest" />
     <AiChat v-if="flowState === flowStateEnum.AIchat" />
     <PostQuestionnaire v-if="flowState === flowStateEnum.postTest" />
     <AllEnd v-if="flowState === flowStateEnum.end" />
@@ -12,13 +13,14 @@
 import { mapState } from 'vuex'
 import InfoRead from './components/InfoRead.vue'
 import InfoCollect from '@/components/InfoCollect.vue'
+import PreQuestionnaire from './components/PreQuestionnaire.vue'
 import AiChat from '@/components/AIChat.vue'
 import PostQuestionnaire from './components/PostQuestionnaire.vue'
 import AllEnd from './components/AllEnd.vue'
 
 export default {
   name: 'App',
-  components: { InfoRead, InfoCollect, AiChat, PostQuestionnaire, AllEnd },
+  components: { InfoRead, InfoCollect, PreQuestionnaire, AiChat, PostQuestionnaire, AllEnd },
   computed: {
     ...mapState(['flowState', 'flowStateEnum'])
   }
