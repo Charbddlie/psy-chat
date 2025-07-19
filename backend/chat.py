@@ -56,6 +56,8 @@ class LLM_Chat():
         self.model_name = settings['model_name'] if 'model_name' in settings else 'o4-mini'
         self.start_time = datetime.now()
 
+        self.mock_cnt = 0
+
 
     def chat(self, message=None):
         # 初始化对话历史
@@ -97,7 +99,10 @@ class LLM_Chat():
         #         raise ValueError("API未返回有效内容")
         # except Exception as e:
         #     return json.dumps({"type": "error", "content": f"API请求失败: {e}"})
-        ai_message = "长"*300
+        self.mock_cnt += 1
+        if self.mock_cnt >= 10: ai_message = "聊天已结束"
+        else: ai_message = "长"*300
+        
         # 记录AI回复到历史
         self.history.append({"role": "assistant", "content": ai_message})
 

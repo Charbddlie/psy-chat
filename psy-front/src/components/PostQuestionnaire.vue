@@ -1,104 +1,104 @@
 <template>
-  <div class="questionnaire-bg">
-    <div class="questionnaire-card">
-      <h2 class="pq-title">⚡ 闪电形成知识后测</h2>
-      <div class="pq-content">
+  <div class="q-bg">
+    <div class="q-card">
+      <h2 class="q-title">⚡ 闪电形成知识后测</h2>
+      <div class="q-content">
         <!-- 阶段1：主观体验量表 -->
         <div v-if="step === 1">
-          <div class="pq-instruction">
-            <b>指导语：</b>以下是多个关于你在使用AI学习助手时的主观感受与体验的陈述，请根据你的真实体验，从1=“完全不同意”到5=“完全同意”中选择一个最符合你感受的选项。
+          <div class="q-instruction">
+            以下是多个关于你在使用AI学习助手时的主观感受与体验的陈述，请根据你的真实体验，从1=“完全不同意”到5=“完全同意”中选择一个最符合你感受的选项。
           </div>
-          <div v-for="(group, gIdx) in subjectiveGroups" :key="gIdx" class="pq-scale-group">
-            <div class="pq-scale-group-title">{{ group.title }}</div>
-            <div v-for="(q, qIdx) in group.questions" :key="qIdx" class="pq-question-block">
-              <div class="pq-question">
-                <span class="pq-qindex">{{ group.base + qIdx + 1 }}.</span>
+          <div v-for="(group, gIdx) in subjectiveGroups" :key="gIdx" class="q-scale-group">
+            <!-- <div class="q-scale-group-title">{{ group.title }}</div> -->
+            <div v-for="(q, qIdx) in group.questions" :key="qIdx" class="q-question-block">
+              <div class="q-question">
+                <span class="q-qindex">{{ group.base + qIdx + 1 }}.</span>
                 {{ q.text }}
               </div>
-              <div class="pq-scale">
-                <span class="pq-scale-label">1</span>
-                <div class="pq-scale-options pq-scale-5">
+              <div class="q-scale">
+                <span class="q-scale-label">1</span>
+                <div class="q-scale-options q-scale-5">
                   <label v-for="n in 5" :key="n"
-                    :class="['pq-scale-item', { selected: subjectiveAnswers[group.base + qIdx] === n }]">
+                    :class="['q-scale-item', { selected: subjectiveAnswers[group.base + qIdx] === n }]">
                     <input type="radio" :value="n" v-model="subjectiveAnswers[group.base + qIdx]"
-                      class="pq-scale-radio" />
+                      class="q-scale-radio" />
                     <span>{{ n }}</span>
                   </label>
                 </div>
-                <span class="pq-scale-label">5</span>
+                <span class="q-scale-label">5</span>
               </div>
             </div>
           </div>
-          <button class="pq-submit-btn" @click="handleSubjectiveSubmit">提交本部分</button>
+          <button class="q-submit-btn" @click="handleSubjectiveSubmit">提交本部分</button>
         </div>
 
         <!-- 阶段2：知识题 -->
         <div v-else-if="step === 2">
-          <div class="pq-instruction">
-            <b>指导语：</b>请根据刚才的学习内容，回答以下问题。
+          <div class="q-instruction">
+            请根据刚才的学习内容，回答以下问题。
           </div>
-          <div v-for="(q, idx) in knowledgeQuestions" :key="idx" class="pq-question-block">
-            <div class="pq-question">
-              <span class="pq-qindex">{{ idx + 1 }}.</span>
+          <div v-for="(q, idx) in knowledgeQuestions" :key="idx" class="q-question-block">
+            <div class="q-question">
+              <span class="q-qindex">{{ idx + 1 }}.</span>
               {{ q.text }}
             </div>
-            <div v-if="q.type === 'choice'" class="pq-options">
+            <div v-if="q.type === 'choice'" class="q-options">
               <label v-for="opt in q.options" :key="opt.value"
-                :class="['pq-option', { selected: knowledgeAnswers[idx] === opt.value }]">
-                <input type="radio" :value="opt.value" v-model="knowledgeAnswers[idx]" class="pq-radio" />
-                <span class="pq-option-label">{{ opt.label }}. {{ opt.text }}</span>
+                :class="['q-option', { selected: knowledgeAnswers[idx] === opt.value }]">
+                <input type="radio" :value="opt.value" v-model="knowledgeAnswers[idx]" class="q-radio" />
+                <span class="q-option-label">{{ opt.label }}. {{ opt.text }}</span>
               </label>
             </div>
           </div>
-          <button class="pq-submit-btn" @click="handleKnowledgeSubmit">提交本部分</button>
+          <button class="q-submit-btn" @click="handleKnowledgeSubmit">提交本部分</button>
         </div>
 
         <!-- 阶段3：系统体验量表与开放题 -->
         <div v-else-if="step === 3">
-          <div class="pq-instruction">
-            <b>指导语：</b>请对您刚才使用AI学习系统的体验进行评价。（1=完全不同意，7=完全同意）
+          <div class="q-instruction">
+            请对您刚才使用AI学习系统的体验进行评价。（1=完全不同意，7=完全同意）
           </div>
-          <div v-for="(group, gIdx) in systemGroups" :key="gIdx" class="pq-scale-group">
-            <div class="pq-scale-group-title">{{ group.title }}</div>
-            <div v-for="(q, qIdx) in group.questions" :key="qIdx" class="pq-question-block">
-              <div class="pq-question">
-                <span class="pq-qindex">{{ group.base + qIdx + 1 }}.</span>
+          <div v-for="(group, gIdx) in systemGroups" :key="gIdx" class="q-scale-group">
+            <!-- <div class="q-scale-group-title">{{ group.title }}</div> -->
+            <div v-for="(q, qIdx) in group.questions" :key="qIdx" class="q-question-block">
+              <div class="q-question">
+                <span class="q-qindex">{{ group.base + qIdx + 1 }}.</span>
                 {{ q.text }}
               </div>
-              <div class="pq-scale">
-                <span class="pq-scale-label">1</span>
-                <div class="pq-scale-options">
+              <div class="q-scale">
+                <span class="q-scale-label">1</span>
+                <div class="q-scale-options">
                   <label v-for="n in 7" :key="n"
-                    :class="['pq-scale-item', { selected: systemAnswers[group.base + qIdx] === n }]">
-                    <input type="radio" :value="n" v-model="systemAnswers[group.base + qIdx]" class="pq-scale-radio" />
+                    :class="['q-scale-item', { selected: systemAnswers[group.base + qIdx] === n }]">
+                    <input type="radio" :value="n" v-model="systemAnswers[group.base + qIdx]" class="q-scale-radio" />
                     <span>{{ n }}</span>
                   </label>
                 </div>
-                <span class="pq-scale-label">7</span>
+                <span class="q-scale-label">7</span>
               </div>
             </div>
           </div>
-          <div class="pq-question-block">
-            <div class="pq-question">
-              <span class="pq-qindex">10.</span>
+          <div class="q-question-block">
+            <div class="q-question">
+              <span class="q-qindex">10.</span>
               您对这个AI学习系统的总体印象是什么？（请简述）
             </div>
-            <textarea v-model="systemOpen1" class="pq-textarea" rows="3" placeholder="请输入您的看法..."></textarea>
+            <textarea v-model="systemOpen1" class="q-textarea" rows="3" placeholder="请输入您的看法..."></textarea>
           </div>
-          <div class="pq-question-block">
-            <div class="pq-question">
-              <span class="pq-qindex">11.</span>
+          <div class="q-question-block">
+            <div class="q-question">
+              <span class="q-qindex">11.</span>
               您觉得这个系统还可以在哪些方面改进？（请简述）
             </div>
-            <textarea v-model="systemOpen2" class="pq-textarea" rows="3" placeholder="请输入您的建议..."></textarea>
+            <textarea v-model="systemOpen2" class="q-textarea" rows="3" placeholder="请输入您的建议..."></textarea>
           </div>
-          <button class="pq-submit-btn" @click="handleSystemSubmit">提交全部问卷</button>
+          <button class="q-submit-btn" @click="handleSystemSubmit">提交全部问卷</button>
         </div>
 
         <!-- 阶段4：结果展示 -->
-        <div v-else-if="step === 4" class="pq-result">
+        <!-- <div v-else-if="step === 4" class="q-result">
           <h3>🎉 问卷已提交！</h3>
-        </div>
+        </div> -->
       </div>
     </div>
   </div>
@@ -110,6 +110,7 @@ export default {
   name: "PostQuestionnaire",
   data() {
     return {
+      check: true,
       step: 1,
       // 主观体验量表
       subjectiveGroups: [
@@ -338,16 +339,31 @@ export default {
       usabilityScore: 0,
     };
   },
+  created() {
+    this.$nextTick(() => {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    });
+  },
   methods: {
     handleSubjectiveSubmit() {
-      if (this.subjectiveAnswers.some(ans => ans === null)) {
+      if (this.check && this.subjectiveAnswers.some(ans => ans === null)) {
         alert("请完成所有主观体验量表题目后再提交！");
         return;
       }
-      // 提交主观体验量表到后端，同时提交所有题目内容
-      self.subjective_payload = {
-        questions: this.subjectiveGroups.flatMap(g => g.questions.map(q => q.text)),
-        answers: this.subjectiveAnswers,
+      // 每一题单独打分，传输到后端时只给出题目和分数
+      const subjectiveItems = [];
+      let idx = 0;
+      for (const group of this.subjectiveGroups) {
+        for (const q of group.questions) {
+          subjectiveItems.push({
+            question: q.text,
+            score: this.subjectiveAnswers[idx]
+          });
+          idx++;
+        }
+      }
+      this.subjective_payload = {
+        items: subjectiveItems
       };
       this.step++;
       this.$nextTick(() => {
@@ -355,7 +371,7 @@ export default {
       });
     },
     handleKnowledgeSubmit() {
-      if (this.knowledgeAnswers.some(ans => !ans)) {
+      if (this.check && this.knowledgeAnswers.some(ans => !ans)) {
         alert("请完成所有知识题后再提交！");
         return;
       }
@@ -368,18 +384,18 @@ export default {
       this.knowledgeSubScores = { concept, application, transfer };
       this.knowledgeScore = concept + application + transfer;
 
-      // 提交知识题到后端，同时提交所有题目内容和选项
-      const questions = this.knowledgeQuestions.map(q => ({
-        text: q.text,
+      // 每一题单独传输：题目、选项、作答
+      const knowledgeItems = this.knowledgeQuestions.map((q, idx) => ({
+        question: q.text,
         options: q.options ? q.options.map(opt => ({
           value: opt.value,
           label: opt.label,
           text: opt.text
-        })) : []
+        })) : [],
+        answer: this.knowledgeAnswers[idx]
       }));
-      self.knowledge_payload = {
-        questions: questions,
-        answers: this.knowledgeAnswers,
+      this.knowledge_payload = {
+        items: knowledgeItems,
         score: this.knowledgeScore,
         subScores: this.knowledgeSubScores,
         timestamp: Date.now()
@@ -390,7 +406,7 @@ export default {
       });
     },
     handleSystemSubmit() {
-      if (this.systemAnswers.some(ans => ans === null) || !this.systemOpen1.trim() || !this.systemOpen2.trim()) {
+      if (this.check && (this.systemAnswers.some(ans => ans === null) || !this.systemOpen1.trim() || !this.systemOpen2.trim())) {
         alert("请完整填写所有系统体验题目和简答题后再提交！");
         return;
       }
@@ -399,11 +415,20 @@ export default {
       this.satisfactionScore = (this.systemAnswers[3] + this.systemAnswers[4] + this.systemAnswers[5]) / 3;
       this.usabilityScore = (this.systemAnswers[6] + this.systemAnswers[7] + this.systemAnswers[8]) / 3;
 
-      // 提交系统体验量表与开放题到后端，同时提交所有题目内容
-      const questions = this.systemGroups.flatMap(g => g.questions.map(q => q.text));
-      self.system_payload = {
-        questions: questions,
-        answers: this.systemAnswers,
+      // 每一题单独打分，传输到后端时只给出题目和分数
+      const systemItems = [];
+      let idx = 0;
+      for (const group of this.systemGroups) {
+        for (const q of group.questions) {
+          systemItems.push({
+            question: q.text,
+            score: this.systemAnswers[idx]
+          });
+          idx++;
+        }
+      }
+      this.system_payload = {
+        items: systemItems,
         open1: this.systemOpen1,
         open2: this.systemOpen2,
         willContinueScore: this.willContinueScore,
@@ -411,31 +436,27 @@ export default {
         usabilityScore: this.usabilityScore,
         timestamp: Date.now()
       };
+      this.submitAllQuestionnaireData();
     },
-  },
-  async submitAllQuestionnaireData() {
-    const now = new Date();
-    const pad = n => n.toString().padStart(2, '0');
-    const time =
-      now.getFullYear() + '-' +
-      pad(now.getMonth() + 1) + '-' +
-      pad(now.getDate()) + ' ' +
-      pad(now.getHours()) + ':' +
-      pad(now.getMinutes()) + ':' +
-      pad(now.getSeconds());
+    async submitAllQuestionnaireData() {
+      const now = new Date();
+      const pad = n => n.toString().padStart(2, '0');
+      const time =
+        now.getFullYear() + '-' +
+        pad(now.getMonth() + 1) + '-' +
+        pad(now.getDate()) + ' ' +
+        pad(now.getHours()) + ':' +
+        pad(now.getMinutes()) + ':' +
+        pad(now.getSeconds());
 
-    const payload = {
-      userId: this.$store.state.userInfo?.id || '',
-      userName: this.$store.state.userInfo?.name || '',
-      time,
-      subjective: self.subjective_payload,
-      knowledge: self.knowledge_payload,
-      system: self.system_payload
-    }
-    let success = false;
-    let attempts = 0;
-    let lastError = null;
-    while (!success && attempts < 5) {
+      const payload = {
+        userId: this.$store.state.userInfo?.id || '',
+        userName: this.$store.state.userInfo?.name || '',
+        time,
+        subjective: this.subjective_payload,
+        knowledge: this.knowledge_payload,
+        system: this.system_payload
+      }
       try {
         const res = await fetch(`${config.apiBaseUrl}/post_questionnaire`, {
           method: 'POST',
@@ -445,29 +466,20 @@ export default {
           body: JSON.stringify(payload)
         });
         if (!res.ok) throw new Error('Network response was not ok');
-        success = true;
+        // this.step++;
+        this.$store.commit('setStateToNext', { currentState: this.$store.state.flowState, delay: 0 });
       } catch (e) {
-        lastError = e;
-        attempts++;
-        if (attempts < 5) {
-          await new Promise(resolve => setTimeout(resolve, 1000));
-        }
+        alert('问卷提交失败，请检查网络后重试。');
+        // 可选：你可以在这里做进一步的错误处理
+        console.error('问卷提交失败', e);
       }
     }
-    if (success) {
-      this.step++;
-      this.$store.commit('setStateToNext', { currentState: this.$store.state.flowState, delay: 2000 });
-    } else {
-      alert('问卷提交失败，请检查网络后重试。');
-      // 可选：你可以在这里做进一步的错误处理
-      console.error('问卷提交失败', lastError);
-    }
-  }
+  },
 };
 </script>
 
 <style scoped>
-.pq-instruction {
+.q-instruction {
   background: #f6f8fa;
   border-left: 4px solid #4e8cff;
   padding: 10px 16px;
@@ -476,22 +488,22 @@ export default {
   color: #333;
 }
 
-.pq-scale-group-title {
+.q-scale-group-title {
   font-weight: bold;
   margin: 18px 0 8px 0;
   color: #2a5db0;
 }
 
-.pq-scale-5 .pq-scale-item {
+.q-scale-5 .q-scale-item {
   width: 32px;
 }
 
-.pq-result {
+.q-result {
   text-align: center;
   padding: 24px 0;
 }
 
-.pq-score-block {
+.q-score-block {
   margin: 12px 0;
   font-size: 16px;
 }

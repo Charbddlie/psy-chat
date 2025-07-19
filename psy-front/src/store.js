@@ -16,7 +16,7 @@ export default createStore({
       postTest: 'postTest',
       end: 'end',
     },
-    flowState: 'end',
+    flowState: 'postTest',
   },
   mutations: {
     setUserInfo(state, payload) {

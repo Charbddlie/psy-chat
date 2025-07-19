@@ -1,97 +1,97 @@
 <template>
-  <div class="questionnaire-bg">
-    <div class="questionnaire-card">
-      <h2 class="pq-title">⚡ 闪电形成知识前测</h2>
-      <div class="pq-content">
+  <div class="q-bg">
+    <div class="q-card">
+      <h2 class="q-title">⚡ 闪电形成知识前测</h2>
+      <div class="q-content">
         <!-- 指导语 -->
-        <div class="pq-instruction" v-if="step === 1">
+        <div class="q-instruction" v-if="step === 1">
           <p style="color:#2563eb;font-weight:500;margin-bottom:10px;">
-            指导语：在开始学习之前，我们想了解您对闪电形成过程的现有知识。这不是考试，请根据您目前的了解如实回答。如果不知道，选择"不知道"即可。
+            在开始学习之前，我们想了解您对闪电形成过程的现有知识。这不是考试，请根据您目前的了解如实回答。如果不知道，选择"不知道"即可。
           </p>
         </div>
-        <div class="pq-instruction" v-else-if="step === 2">
+        <div class="q-instruction" v-else-if="step === 2">
           <p style="color:#2563eb;font-weight:500;margin-bottom:10px;">
-            指导语：请根据您的实际情况，对以下陈述进行评价。<br>
+            请根据您的实际情况，对以下陈述进行评价。<br>
             <span style="font-size:0.98em;">（1=完全不同意，7=完全同意）</span>
           </p>
         </div>
-        <div class="pq-instruction" v-else-if="step === 3">
+        <div class="q-instruction" v-else-if="step === 3">
           <p style="color:#2563eb;font-weight:500;margin-bottom:10px;">
-            指导语：请描述您此刻的感受程度。<br>
+            请描述您此刻的感受程度。<br>
             <span style="font-size:0.98em;">（1=很少或没有，5=非常多）</span>
           </p>
         </div>
 
         <!-- Step 1: 闪电知识选择题 -->
         <div v-if="step === 1">
-          <div class="pq-question-block" v-for="(q, idx) in knowledgeQuestions" :key="q.id">
-            <div class="pq-question">
-              <span class="pq-qindex">{{ idx + 1 }}.</span>
+          <div class="q-question-block" v-for="(q, idx) in knowledgeQuestions" :key="q.id">
+            <div class="q-question">
+              <span class="q-qindex">{{ idx + 1 }}.</span>
               {{ q.text }}
             </div>
-            <div class="pq-options">
+            <div class="q-options">
               <label v-for="opt in q.options" :key="opt.value"
-                :class="['pq-option', { selected: knowledgeAnswers[idx] === opt.value }]">
-                <input type="radio" :value="opt.value" v-model="knowledgeAnswers[idx]" class="pq-radio" />
-                <span class="pq-option-label">{{ opt.label }}. {{ opt.text }}</span>
+                :class="['q-option', { selected: knowledgeAnswers[idx] === opt.value }]">
+                <input type="radio" :value="opt.value" v-model="knowledgeAnswers[idx]" class="q-radio" />
+                <span class="q-option-label">{{ opt.label }}. {{ opt.text }}</span>
               </label>
             </div>
           </div>
-          <button class="pq-submit-btn" @click="handleKnowledgeSubmit">提交本页</button>
+          <button class="q-submit-btn" @click="handleKnowledgeSubmit">提交本页</button>
         </div>
 
         <!-- Step 2: AI态度量表 -->
         <div v-if="step === 2">
-          <div class="pq-question-block" v-for="(q, idx) in aiScaleQuestions" :key="q.id">
-            <div class="pq-question">
-              <span class="pq-qindex">{{ idx + 1 }}.</span>
+          <div class="q-question-block" v-for="(q, idx) in aiScaleQuestions" :key="q.id">
+            <div class="q-question">
+              <span class="q-qindex">{{ idx + 1 }}.</span>
               {{ q.text }}
             </div>
-            <div class="pq-scale">
-              <span class="pq-scale-label">1</span>
-              <div class="pq-scale-options">
-                <label v-for="n in 7" :key="n" :class="['pq-scale-item', { selected: aiScaleAnswers[idx] === n }]">
-                  <input type="radio" :value="n" v-model="aiScaleAnswers[idx]" class="pq-scale-radio" />
+            <div class="q-scale">
+              <span class="q-scale-label">1</span>
+              <div class="q-scale-options">
+                <label v-for="n in 7" :key="n" :class="['q-scale-item', { selected: aiScaleAnswers[idx] === n }]">
+                  <input type="radio" :value="n" v-model="aiScaleAnswers[idx]" class="q-scale-radio" />
                   <span>{{ n }}</span>
                 </label>
               </div>
-              <span class="pq-scale-label">7</span>
+              <span class="q-scale-label">7</span>
             </div>
           </div>
-          <!-- <div class="pq-scale-summary" v-if="aiScaleScore !== null" style="margin-top:10px;color:#6366f1;">
+          <!-- <div class="q-scale-summary" v-if="aiScaleScore !== null" style="margin-top:10px;color:#6366f1;">
             当前平均分：{{ aiScaleScore.toFixed(2) }}
           </div> -->
-          <button class="pq-submit-btn" @click="handleAIScaleSubmit">提交本页</button>
+          <button class="q-submit-btn" @click="handleAIScaleSubmit">提交本页</button>
         </div>
 
         <!-- Step 3: 情感量表 -->
         <div v-if="step === 3">
-          <div class="pq-question-block" v-for="(q, idx) in affectQuestions" :key="q.id">
-            <div class="pq-question">
-              <span class="pq-qindex">{{ idx + 1 }}.</span>
+          <div class="q-question-block" v-for="(q, idx) in affectQuestions" :key="q.id">
+            <div class="q-question">
+              <span class="q-qindex">{{ idx + 1 }}.</span>
               {{ q.text }}
             </div>
-            <div class="pq-scale">
-              <span class="pq-scale-label">1</span>
-              <div class="pq-scale-options">
-                <label v-for="n in 5" :key="n" :class="['pq-scale-item', { selected: affectAnswers[idx] === n }]">
-                  <input type="radio" :value="n" v-model="affectAnswers[idx]" class="pq-scale-radio" />
+            <div class="q-scale">
+              <span class="q-scale-label">1</span>
+              <div class="q-scale-options">
+                <label v-for="n in 5" :key="n" :class="['q-scale-item', { selected: affectAnswers[idx] === n }]">
+                  <input type="radio" :value="n" v-model="affectAnswers[idx]" class="q-scale-radio" />
                   <span>{{ n }}</span>
                 </label>
               </div>
-              <span class="pq-scale-label">5</span>
+              <span class="q-scale-label">5</span>
             </div>
           </div>
-          <!-- <div class="pq-scale-summary" v-if="affectPositive !== null && affectNegative !== null" style="margin-top:10px;color:#6366f1;">
+          <!-- <div class="q-scale-summary" v-if="affectPositive !== null && affectNegative !== null" style="margin-top:10px;color:#6366f1;">
             正性情感：{{ affectPositive.toFixed(2) }}
             负性情感：{{ affectNegative.toFixed(2) }}
           </div> -->
-          <button class="pq-submit-btn" @click="handleAffectSubmit">提交问卷</button>
+          <button class="q-submit-btn" @click="handleAffectSubmit">提交问卷</button>
         </div>
 
         <!-- Step 4: 结束/排除提示 -->
         <div v-if="step === 4">
-          <div class="pq-question-block" style="text-align:center;">
+          <div class="q-question-block" style="text-align:center;">
             <div v-if="excluded" style="color:#ef4444;font-weight:600;">
               很抱歉，您不符合本次实验的参与条件。<br>
               <span style="font-size:0.98em;">感谢您的配合！</span>
@@ -221,6 +221,11 @@ export default {
       submitting: false
     };
   },
+  created() {
+    this.$nextTick(() => {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    });
+  },
   computed: {
     // AI态度量表平均分
     aiScaleScore() {
@@ -288,10 +293,8 @@ export default {
         alert("请完整填写所有问题后再提交！");
         return;
       }
-      this.step = 4;
       this.excluded = false;
       this.submitAllQuestionnaireData(false);
-      this.$store.commit('setStateToNext', { currentState: this.$store.state.flowState, delay: 2000 });
     },
     // 提交所有问卷数据到后端
     async submitAllQuestionnaireData(isExcluded) {
@@ -381,6 +384,8 @@ export default {
         console.error('问卷提交失败', e);
       } finally {
         this.submitting = false;
+        this.step = 4;
+        this.$store.commit('setStateToNext', { currentState: this.$store.state.flowState, delay: 2000 });
       }
     }
   }

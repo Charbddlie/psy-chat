@@ -384,7 +384,6 @@ export default {
 
             // 检查是否是聊天结束
             if (response.content && response.content.includes('聊天已结束')) {
-              this.loading = true;
               if (this.socket) {
                 this.socket.close();
               }
