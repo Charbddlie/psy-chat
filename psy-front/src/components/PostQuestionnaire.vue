@@ -457,20 +457,46 @@ export default {
         knowledge: this.knowledge_payload,
         system: this.system_payload
       }
+      // 使用WebSocket发送数据到后端
       try {
-        const res = await fetch(`${config.apiBaseUrl}/post_questionnaire`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(payload)
-        });
-        if (!res.ok) throw new Error('Network response was not ok');
-        // this.step++;
-        this.$store.commit('setStateToNext', { currentState: this.$store.state.flowState, delay: 0 });
+        if (!this.socket || this.socket.readyState !== 1) {
+          // 若socket未连接，先建立连接
+          this.socket = new WebSocket(config.wsUrl);
+          this.socket.onopen = () => {
+            this.socket.send(JSON.stringify({
+              type: 'post_questionnaire',
+              data: payload
+            }));
+          };
+        } else {
+          this.socket.send(JSON.stringify({
+            type: 'post_questionnaire',
+            data: payload
+          }));
+        }
+
+        // 监听WebSocket返回
+        this.socket.onmessage = (event) => {
+          try {
+            const res = JSON.parse(event.data);
+            if (res.type === 'success') {
+              this.$store.commit('setStateToNext', { currentState: this.$store.state.flowState, delay: 0 });
+            } else if (res.type === 'error') {
+              alert('问卷提交失败，请检查网络后重试。');
+              console.error('问卷提交失败', res.msg || res.content || res);
+            }
+          } catch (e) {
+            alert('问卷提交失败，请检查网络后重试。');
+            console.error('问卷提交失败: 解析服务器响应出错', e);
+          }
+        };
+
+        this.socket.onerror = (err) => {
+          alert('问卷提交失败，请检查网络后重试。');
+          console.error('WebSocket错误:', err);
+        };
       } catch (e) {
         alert('问卷提交失败，请检查网络后重试。');
-        // 可选：你可以在这里做进一步的错误处理
         console.error('问卷提交失败', e);
       }
     }

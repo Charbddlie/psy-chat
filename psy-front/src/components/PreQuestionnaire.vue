@@ -369,15 +369,43 @@ export default {
             negative: this.affectNegative
           }
         };
-        // 提交到自定义url
-        const url = `${config.apiBaseUrl}/pre_questionnaire`;
-        await fetch(url, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(payload)
-        });
+        // 使用WebSocket发送数据到后端
+        if (!this.socket || this.socket.readyState !== 1) {
+          // 若socket未连接，先建立连接
+          this.socket = new WebSocket(config.wsUrl);
+          this.socket.onopen = () => {
+            this.socket.send(JSON.stringify({
+              type: 'pre_questionnaire',
+              data: payload
+            }));
+          };
+        } else {
+          this.socket.send(JSON.stringify({
+            type: 'pre_questionnaire',
+            data: payload
+          }));
+        }
+
+        // 监听WebSocket返回
+        this.socket.onmessage = (event) => {
+          try {
+            const res = JSON.parse(event.data);
+            if (res.type === 'success') {
+              // 可选：处理成功
+            } else if (res.type === 'error') {
+              alert('问卷提交失败，请检查网络后重试。');
+              console.error('问卷提交失败', res.msg || res.content || res);
+            }
+          } catch (e) {
+            alert('问卷提交失败，请检查网络后重试。');
+            console.error('问卷提交失败: 解析服务器响应出错', e);
+          }
+        };
+
+        this.socket.onerror = (err) => {
+          alert('问卷提交失败，请检查网络后重试。');
+          console.error('WebSocket错误:', err);
+        };
         // 可选：处理成功/失败
       } catch (e) {
         // 可选：处理错误

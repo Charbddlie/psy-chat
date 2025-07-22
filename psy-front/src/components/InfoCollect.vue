@@ -179,28 +179,42 @@ export default {
         ...this.form,
         major
       };
-      // 发送 POST 请求到本地 8764 端口
-      fetch(`${config.apiBaseUrl}/submit`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(payload)
-      })
-      .then(response => {
-        if (response.ok) {
-          console.log('提交结果:', response);
-          this.submitted = true;
-          this.$store.commit('setStateToNext', { currentState: this.$store.state.flowState, delay: 0 });
-        } else {
-          // 可以根据需要处理错误
-          console.error('提交失败: 服务器返回错误');
+      // 通过WebSocket发送数据到后端
+      if (!this.socket || this.socket.readyState !== 1) {
+        // 若socket未连接，先建立连接
+        this.socket = new WebSocket(config.wsUrl);
+        this.socket.onopen = () => {
+          this.socket.send(JSON.stringify({
+            type: 'info_collect',
+            data: payload
+          }));
+        };
+      } else {
+        this.socket.send(JSON.stringify({
+          type: 'info_collect',
+          data: payload
+        }));
+      }
+
+      // 监听WebSocket返回
+      this.socket.onmessage = (event) => {
+        try {
+          const res = JSON.parse(event.data);
+          if (res.type === 'success') {
+            console.log('提交结果:', res);
+            this.submitted = true;
+            this.$store.commit('setStateToNext', { currentState: this.$store.state.flowState, delay: 0 });
+          } else if (res.type === 'error') {
+            console.error('提交失败:', res.msg || res.content || res);
+          }
+        } catch (e) {
+          console.error('提交失败: 解析服务器响应出错', e);
         }
-      })
-      .catch(err => {
-        // 可以根据需要处理错误
-        console.error('提交失败:', err);
-      });
+      };
+
+      this.socket.onerror = (err) => {
+        console.error('WebSocket错误:', err);
+      };
     }
   }
 }
