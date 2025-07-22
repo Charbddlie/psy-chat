@@ -5,6 +5,7 @@ import tomli
 import os
 import uuid
 from chat import LLMChatFactory
+from questionnaire import *
 
 # 存储所有活跃的chat实例
 chat_instances = {}
@@ -41,6 +42,15 @@ async def websocket_handler(websocket):
                     chat_instance = chat_instances[chat_id]
                     json_message = chat_instance.chat(data.get("content"))
                     await websocket.send(json_message)
+                elif msg_type == "info_collect":
+                    result = await handle_submit(data.get("data", {}))
+                    await websocket.send(json.dumps(result))
+                elif msg_type == "post_questionnaire":
+                    result = await handle_post_questionnaire(data.get("data", {}))
+                    await websocket.send(json.dumps(result))
+                elif msg_type == "pre_questionnaire":
+                    result = await handle_pre_questionnaire(data.get("data", {}))
+                    await websocket.send(json.dumps(result))
                 else:
                     await websocket.send(json.dumps({"type": "info", "content": "已收到消息"}))
             except json.JSONDecodeError:
