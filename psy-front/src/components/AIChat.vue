@@ -440,14 +440,14 @@ export default {
         }, 1000);
       }
       
-      // 设置超时，如果服务器没有响应
-      setTimeout(() => {
-        if (this.loading) {
-          this.loading = false;
-          this.showError('服务器响应超时');
-          this.scrollToBottom();
-        }
-      }, 10000);
+      // // 设置超时，如果服务器没有响应
+      // setTimeout(() => {
+      //   if (this.loading) {
+      //     this.loading = false;
+      //     this.showError('服务器响应超时');
+      //     this.scrollToBottom();
+      //   }
+      // }, 10000);
     },
     scrollToBottom() {
       this.$nextTick(() => {
