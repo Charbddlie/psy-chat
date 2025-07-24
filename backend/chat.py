@@ -49,7 +49,7 @@ class LLM_Chat():
         self.log_path = f"{settings['log_dir']}/{sample_name}_{sample_id}/chat.tsv"
         os.makedirs(f"{settings['log_dir']}/{sample_name}_{sample_id}", exist_ok=True)
         with open('prompt/thunder_prompt.txt', 'r', encoding='utf8') as f:
-            self.prompt = f.read()
+            self.prompt = f.read().replace('{name}', sample_name)
         # 支持自定义 API key 和 base url
         openai.api_key = settings['api_key']
         openai.base_url = settings['base_url']
@@ -65,11 +65,9 @@ class LLM_Chat():
         if not hasattr(self, 'history'):
             self.history = []
             self.history.append({"role": "user", "content": self.prompt})
-
         # 如果有用户输入，加入历史
         elif message != None:
             # 在message后加上json格式的{time_spent: xx minutes}
-            from datetime import datetime
             now = datetime.now()
             if hasattr(self, 'start_time'):
                 time_spent = (now - self.start_time).total_seconds() // 60
@@ -80,7 +78,6 @@ class LLM_Chat():
             message_with_time = f"{message}\n{{\"time_spent\": {int(time_spent)} minutes}}"
             self.history.append({"role": "user", "content": message_with_time})
             log("user", message_with_time, self.log_path)
-
         # 流式传输
         try:
             stream = openai.chat.completions.create(
