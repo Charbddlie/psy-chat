@@ -44,12 +44,15 @@ async def websocket_handler(websocket):
                     await websocket.send(json_message)
                 elif msg_type == "info_collect":
                     result = await handle_submit(data.get("data", {}))
+                    print(f"发送消息：{result['type']}")
                     await websocket.send(json.dumps(result))
                 elif msg_type == "pre_questionnaire":
                     result = await handle_pre_questionnaire(data.get("data", {}))
+                    print(f"发送消息：{result['type']}")
                     await websocket.send(json.dumps(result))
                 elif msg_type == "post_questionnaire":
                     result = await handle_post_questionnaire(data.get("data", {}))
+                    print(f"发送消息：{result['type']}")
                     await websocket.send(json.dumps(result))
                 else:
                     await websocket.send(json.dumps({"type": "info", "content": "已收到消息"}))

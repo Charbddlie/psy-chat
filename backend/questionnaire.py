@@ -32,7 +32,7 @@ async def handle_submit(data):
     return {"type": "success", "userId": data['userId'], "userName": data['userName']}
 
 async def handle_post_questionnaire(data):
-    required_fields = ["userId", "userName", "time", "subjective", "knowledge", "system"]
+    required_fields = ["userId", "userName"]
     missing = check_required_fields(data, required_fields)
     if missing:
         return {"type": "error", "msg": f"缺少字段: {missing}"}
@@ -46,8 +46,7 @@ async def handle_post_questionnaire(data):
 
 async def handle_pre_questionnaire(data):
     required_fields = [
-        "userId", "userName", "time", "excluded",
-        "knowledge", "aiScale", "affect"
+        "userId", "userName"
     ]
     missing = check_required_fields(data, required_fields)
     if missing:
