@@ -1,5 +1,15 @@
 <template>
   <div class="q-bg">
+    <!-- 错误弹窗 -->
+    <transition name="fade">
+      <div v-if="errorMessage" class="error-modal">
+        <div class="error-modal-content">
+          <span class="error-modal-close" @click="errorMessage = ''">&times;</span>
+          <div class="error-modal-icon">⚠️</div>
+          <div class="error-modal-text">{{ errorMessage }}</div>
+        </div>
+      </div>
+    </transition>
     <div class="q-card">
       <h2 class="q-title">📝 基本信息问卷</h2>
       <div class="q-content">
@@ -9,8 +19,8 @@
               <span class="q-qindex">1.</span>
               姓名
             </div>
-            <input type="text" v-model="form.name" class="q-input-short" placeholder="请填写" />
-            <br><span v-if="!form.name && form_uncomplete" class="q-error-tip">请填写姓名</span>
+            <input type="text" v-model="form.userName" class="q-input-short" placeholder="请填写" />
+            <br><span v-if="!form.userName && form_uncomplete" class="q-error-tip">请填写姓名</span>
           </div>
           <div class="q-question-block">
             <div class="q-question">
@@ -106,15 +116,14 @@
 </template>
 
 <script>
-import '@/assets/questionnaire.css'
-import config from '@/config.js'
+// import { inject } from 'vue';
 export default {
   name: 'InfoCollect',
   data() {
     return {
       form: {
-        id: '',
-        name: '',
+        userId: '',
+        userName: '',
         age: '',
         gender: '',
         major: '',
@@ -126,13 +135,14 @@ export default {
       },
       submitted: false,
       form_uncomplete: false,
+      errorMessage: '',
     }
   },
   created() {
     // 生成8位随机id
     const randomId = Math.random().toString(36).substring(2, 10);
-    this.form.id = randomId;
-    this.$store.commit('setUserInfo', { id: randomId });
+    this.form.userId = randomId;
+    this.$store.commit('setUserInfo', { userId: randomId });
     this.$nextTick(() => {
       window.scrollTo({ top: 0, behavior: "smooth" });
     });
@@ -159,17 +169,18 @@ export default {
         pad(now.getMinutes()) + ':' +
         pad(now.getSeconds());
       // 更新store中的id
-      this.$store.commit('setUserInfo', { name: this.form.name });
+      this.$store.commit('setUserInfo', { userName: this.form.userName });
       // 处理“其他”专业
       let major = this.form.major;
       if (major === '其他' && this.form.majorOther.trim()) {
         major = this.form.majorOther.trim();
       }
       // 检查除了majorOther之外form的所有字段是否都有值
-      const requiredFields = ['name', 'age', 'gender', 'major', 'grade', 'aiFrequency', 'aiAttitude'];
+      const requiredFields = ['userName', 'age', 'gender', 'major', 'grade', 'aiFrequency', 'aiAttitude'];
       for (const field of requiredFields) {
         if (!this.form[field] || (typeof this.form[field] === 'string' && this.form[field].trim() === '')) {
           this.form_uncomplete = true;
+          this.showError("填写未完成")
           return;
         }
       }
@@ -179,42 +190,14 @@ export default {
         ...this.form,
         major
       };
-      // 通过WebSocket发送数据到后端
-      if (!this.socket || this.socket.readyState !== 1) {
-        // 若socket未连接，先建立连接
-        this.socket = new WebSocket(config.wsUrl);
-        this.socket.onopen = () => {
-          this.socket.send(JSON.stringify({
-            type: 'info_collect',
-            data: payload
-          }));
-        };
-      } else {
-        this.socket.send(JSON.stringify({
-          type: 'info_collect',
-          data: payload
-        }));
-      }
-
-      // 监听WebSocket返回
-      this.socket.onmessage = (event) => {
-        try {
-          const res = JSON.parse(event.data);
-          if (res.type === 'success') {
-            console.log('提交结果:', res);
-            this.submitted = true;
-            this.$store.commit('setStateToNext', { currentState: this.$store.state.flowState, delay: 0 });
-          } else if (res.type === 'error') {
-            console.error('提交失败:', res.msg || res.content || res);
-          }
-        } catch (e) {
-          console.error('提交失败: 解析服务器响应出错', e);
-        }
-      };
-
-      this.socket.onerror = (err) => {
-        console.error('WebSocket错误:', err);
-      };
+      this.$ws.send(JSON.stringify({
+        type: 'info_collect',
+        data: payload
+      }))
+      this.$store.commit('setStateToNext', { currentState: this.$store.state.flowState, delay: 0 });
+    },
+    showError(msg) {
+      this.errorMessage = msg;
     }
   }
 }

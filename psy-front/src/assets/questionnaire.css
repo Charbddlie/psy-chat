@@ -175,3 +175,31 @@ transform: translateY(-2px) scale(1.03);
   font-weight: 600;
   letter-spacing: 0.5px;
 }
+.q-instruction {
+  background: #f6f8fa;
+  border-left: 4px solid #4e8cff;
+  padding: 10px 16px;
+  margin-bottom: 18px;
+  font-size: 15px;
+  color: #333;
+}
+
+.q-scale-group-title {
+  font-weight: bold;
+  margin: 18px 0 8px 0;
+  color: #2a5db0;
+}
+
+.q-scale-5 .q-scale-item {
+  width: 32px;
+}
+
+.q-result {
+  text-align: center;
+  padding: 24px 0;
+}
+
+.q-score-block {
+  margin: 12px 0;
+  font-size: 16px;
+}

@@ -18,9 +18,9 @@ async def websocket_handler(websocket):
         async for message in websocket:
             try:
                 data = json.loads(message)
-                print(f"收到消息: {data}")
-
                 msg_type = data.get("type")
+                print(f"收到消息: {msg_type}")
+
                 if msg_type == "ping":
                     await websocket.send(json.dumps({"type": "pong", "content": "服务器正常"}))
                 elif msg_type == "create":
@@ -45,11 +45,11 @@ async def websocket_handler(websocket):
                 elif msg_type == "info_collect":
                     result = await handle_submit(data.get("data", {}))
                     await websocket.send(json.dumps(result))
-                elif msg_type == "post_questionnaire":
-                    result = await handle_post_questionnaire(data.get("data", {}))
-                    await websocket.send(json.dumps(result))
                 elif msg_type == "pre_questionnaire":
                     result = await handle_pre_questionnaire(data.get("data", {}))
+                    await websocket.send(json.dumps(result))
+                elif msg_type == "post_questionnaire":
+                    result = await handle_post_questionnaire(data.get("data", {}))
                     await websocket.send(json.dumps(result))
                 else:
                     await websocket.send(json.dumps({"type": "info", "content": "已收到消息"}))

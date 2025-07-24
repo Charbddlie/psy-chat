@@ -10,6 +10,16 @@
         </div>
       </div>
     </transition>
+    <!-- 跳转弹窗 -->
+    <transition name="fade">
+      <div v-if="endFlag" class="error-modal">
+        <div class="error-modal-content">
+          <span class="error-modal-close">&times;</span>
+          <div class="error-modal-icon">🥰</div>
+          <div class="error-modal-text">聊天结束啦</div>
+        </div>
+      </div>
+    </transition>
     <div class="chat-messages" ref="messageContainer">
       <transition-group name="bubble" tag="div">
         <div
@@ -246,64 +256,6 @@
   transform: translateY(-2px) scale(1.03);
 }
 
-.error-modal {
-  position: fixed;
-  z-index: 9999;
-  left: 0; top: 0; right: 0; bottom: 0;
-  background: rgba(99,102,241,0.10);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  animation: fadeIn 0.3s;
-}
-.error-modal-content {
-  background: #fff;
-  padding: 32px 44px 28px 44px;
-  border-radius: 16px;
-  box-shadow: 0 4px 24px rgba(99,102,241,0.18);
-  min-width: 280px;
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  animation: fadeIn 0.4s;
-}
-.error-modal-close {
-  position: absolute;
-  right: 18px;
-  top: 12px;
-  font-size: 26px;
-  color: #6366f1;
-  cursor: pointer;
-  font-weight: bold;
-  transition: color 0.2s;
-}
-.error-modal-close:hover {
-  color: #d32f2f;
-}
-.error-modal-icon {
-  font-size: 2.2rem;
-  margin-bottom: 10px;
-  color: #f59e42;
-  animation: shake 0.7s;
-}
-@keyframes shake {
-  0% { transform: translateX(0);}
-  20% { transform: translateX(-4px);}
-  40% { transform: translateX(4px);}
-  60% { transform: translateX(-2px);}
-  80% { transform: translateX(2px);}
-  100% { transform: translateX(0);}
-}
-.error-modal-text {
-  color: #d32f2f;
-  font-size: 1.13rem;
-  margin-top: 8px;
-  text-align: center;
-  font-weight: 500;
-  letter-spacing: 0.5px;
-}
-
 .fade-enter-active, .fade-leave-active {
   transition: opacity 0.3s;
 }
@@ -326,9 +278,8 @@
 
 
 <script>
-import config from '@/config.js'
 export default {
-  name: 'AiChat',
+  name: 'AIChat',
   data() {
     return {
       userInput: '',
@@ -339,69 +290,25 @@ export default {
       connected: false,
       errorMessage: '',
       chatComplete: false,
+      endFlag: false,
     }
   },
-  created() {
-    this.connectWebSocket();
+  created (){
+    console.log('created')
   },
-  beforeUnmount() {
-    if (this.socket) {
-      this.socket.close();
-    }
+  mounted () {
+    console.log("onMounted")
+    this.$ws.addMessageListener(this.handleMessage);
+    this.$ws.send(JSON.stringify({ 
+      type: 'create', 
+      sample_name: this.$store.state.userInfo.userName || 'noname', 
+      sample_id: this.$store.state.userInfo.userId || 'noid'
+    }));
+  },
+  unmounted (){
+    this.$ws.removeMessageListener(this.handleMessage);
   },
   methods: {
-    connectWebSocket() {
-      this.socket = new WebSocket(config.wsUrl);
-      
-      this.socket.onopen = () => {
-        console.log('WebSocket连接已建立');
-        this.connected = true;
-        // 发送start消息启动聊天会话
-        this.socket.send(JSON.stringify({ 
-          type: 'create', 
-          sample_name: this.$store.state.userInfo.name || 'noname', 
-          sample_id: this.$store.state.userInfo.id || 'noid'
-        }));
-      };
-      
-      this.socket.onmessage = (event) => {
-        const response = JSON.parse(event.data);
-        console.log('收到服务器消息:', response);
-        
-        switch (response.type) {
-          case 'created':
-            this.chat_id = response.chat_id;
-            break;
-          case 'chat':
-            if (response.content) {
-              this.messages.push({
-                content: response.content,
-                isUser: false
-              });
-              this.scrollToBottom();
-            }
-            this.loading = false;
-
-            // 检查是否是聊天结束
-            if (response.content && response.content.includes('聊天已结束')) {
-              if (this.socket) {
-                this.socket.close();
-              }
-            }
-        }
-      };
-      
-      this.socket.onerror = (error) => {
-        console.error('WebSocket错误:', error);
-        this.showError('连接错误，请检查服务器是否运行');
-      };
-      
-      this.socket.onclose = () => {
-        console.log('WebSocket连接已关闭');
-        this.connected = false;
-        this.$store.commit('setStateToNext', { currentState: this.$store.state.flowState, delay: 2000 });
-      };
-    },
     sendMessage() {
       // console.log(this.loading);
       if (!this.userInput.trim() || this.loading) return;
@@ -416,45 +323,38 @@ export default {
       this.userInput = '';
       this.loading = true;
       
-      // 发送消息到WebSocket服务器
-      if (this.connected) {
-        this.socket.send(JSON.stringify({
-          type: 'chat',
-          chat_id: this.chat_id,
-          content: userMessage
-        }));
-      } else {
-        // 如果未连接，尝试重新连接
-        this.connectWebSocket();
-        setTimeout(() => {
-          if (this.connected) {
-            this.socket.send(JSON.stringify({
-              type: 'chat',
-              chat_id: this.chat_id,
-              content: userMessage
-            }));
-          } else {
-            this.showError('无法连接到服务器');
-            this.loading = false;
-          }
-        }, 1000);
-      }
-      
-      // // 设置超时，如果服务器没有响应
-      // setTimeout(() => {
-      //   if (this.loading) {
-      //     this.loading = false;
-      //     this.showError('服务器响应超时');
-      //     this.scrollToBottom();
-      //   }
-      // }, 10000);
+      this.$ws.send(JSON.stringify({
+        type: 'chat',
+        chat_id: this.chat_id,
+        content: userMessage
+      }));
     },
-    scrollToBottom() {
-      this.$nextTick(() => {
-        if (this.$refs.messageContainer) {
-          this.$refs.messageContainer.scrollTop = this.$refs.messageContainer.scrollHeight;
-        }
-      });
+    handleMessage (data) {
+      const response = JSON.parse(data);
+      console.log('收到服务器消息:', response);
+      
+      switch (response.type) {
+        case 'created':
+          this.chat_id = response.chat_id;
+          break;
+        case 'chat':
+          if (response.content) {
+            this.messages.push({
+              content: response.content,
+              isUser: false
+            });
+            this.$nextTick(() => {
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            });
+          }
+          this.loading = false;
+
+          // 检查是否是聊天结束
+          if (response.content && response.content.includes('聊天已结束')) {
+            this.$store.commit('setStateToNext', { currentState: this.$store.state.flowState, delay: 2000 });
+            this.endFlag = true;
+          }
+      }
     },
     showError(msg) {
       this.errorMessage = msg;

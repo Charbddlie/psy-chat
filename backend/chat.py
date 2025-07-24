@@ -47,7 +47,8 @@ class LLM_Chat():
         self.sample_id = sample_id
         settings = tomli.load(open('settings.toml', 'rb'))
         self.log_path = f"{settings['log_dir']}/{sample_name}_{sample_id}/chat.tsv"
-        with open('thunder_prompt.txt', 'r', encoding='utf8') as f:
+        os.makedirs(f"{settings['log_dir']}/{sample_name}_{sample_id}", exist_ok=True)
+        with open('prompt/thunder_prompt.txt', 'r', encoding='utf8') as f:
             self.prompt = f.read()
         # 支持自定义 API key 和 base url
         openai.api_key = settings['api_key']
@@ -100,7 +101,7 @@ class LLM_Chat():
         except Exception as e:
             return json.dumps({"type": "error", "content": f"API请求失败: {e}"})
         # self.mock_cnt += 1
-        # if self.mock_cnt >= 10: ai_message = "聊天已结束"
+        # if self.mock_cnt >= 3: ai_message = "聊天已结束"
         # else: ai_message = "长"*300
         
         # 记录AI回复到历史

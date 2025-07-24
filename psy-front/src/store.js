@@ -4,15 +4,15 @@ import { createStore } from 'vuex'
 export default createStore({
   state: {
     userInfo: {
-      id: '',
-      name: '',
+      userId: '',
+      userName: '',
     },
     // 流程状态枚举
     flowStateEnum: {
       readInfo: 'readInfo',
       collectInfo: 'collectInfo',
       preTest: 'preTest',
-      AIchat: 'AIchat',
+      AIChat: 'AIChat',
       postTest: 'postTest',
       end: 'end',
     },
