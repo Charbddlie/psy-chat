@@ -1,10 +1,11 @@
-<img src='psy-front\public\favicon.ico' width="30%"/>
+<div align="center">
+  <img src='psy-front\public\favicon.ico' width="30%"/>
 
-# Psy Chat
+  # Psy Chat
 
-一个开源的心理学测试平台，支持流式AI对话，前后测问卷收集
-
-## 启动
+  一个开源的心理学测试平台，支持流式AI对话，前后测问卷收集
+  ## 启动
+</div>
 
 ```
 cd backend
