@@ -153,23 +153,20 @@ export default {
         { text: "我对AI技术比较熟悉" },
         { text: "我认为AI技术很有用" },
         { text: "我愿意尝试新的AI产品" },
-        { text: "我对AI技术持积极态度" }
       ],
-      aiScaleAnswers: Array(5).fill(null),
+      aiScaleAnswers: Array(4).fill(null),
       // Step 3: 情感量表
       affectQuestions: [
-        { text: "目前您感到多大程度的：兴奋的" },
-        { text: "目前您感到多大程度的：热情的" },
-        { text: "目前您感到多大程度的：警觉的" },
-        { text: "目前您感到多大程度的：坚定的" },
-        { text: "目前您感到多大程度的: 活跃的" },
-        { text: "目前您感到多大程度的：沮丧的" },
-        { text: "目前您感到多大程度的: 烦恼的" },
-        { text: "目前您感到多大程度的: 内疚的" },
-        { text: "目前您感到多大程度的: 害怕的" },
-        { text: "目前您感到多大程度的: 敌意的" },
+        { text: "兴奋的" },
+        { text: "热情的" },
+        { text: "享受的" },
+        { text: "好奇的" },
+        { text: "沮丧的" },
+        { text: "焦虑的" },
+        { text: "无聊的" },
+        { text: "困惑的" },
       ],
-      affectAnswers: Array(10).fill(null),
+      affectAnswers: Array(8).fill(null),
       // 结束/排除
       excluded: false,
       submitting: false,
@@ -251,15 +248,16 @@ export default {
         affectPayload: {
           questions: this.affectQuestions,
           answers: this.affectAnswers.slice(),
-          positive: this.affectAnswers.slice(0, 5).reduce((sum, val) => sum + val, 0) / 5,
-          negative: this.affectAnswers.slice(5, 10).reduce((sum, val) => sum + val, 0) / 5,
+          positive: this.affectAnswers.slice(0, 4).reduce((sum, val) => sum + val, 0) / this.affectAnswers.length * 2,
+          negative: this.affectAnswers.slice(4, 8).reduce((sum, val) => sum + val, 0) / this.affectAnswers.length * 2,
         }
       };
       this.$ws.send(JSON.stringify({
         type: 'pre_questionnaire',
         data: payload
       }))
-      this.$store.commit('setStateToNext', { currentState: this.$store.state.flowState, delay: 0 });
+      step(4)
+      this.$store.commit('setStateToNext', { currentState: this.$store.state.flowState, delay: 2000 });
     },
     showError(msg) {
       this.errorMessage = msg;

@@ -13,7 +13,7 @@
     <div class="q-card">
       <h2 class="q-title">⚡ 闪电形成知识后测</h2>
       <div class="q-content">
-        <!-- step 1: 情感量表 -->
+        <!-- step 1: PANAS正负情感量表 -->
         <div v-if="step === 1">
           <div class="q-instruction">
             在刚才与AI学习助手交互后，您现在感到多大程度的：
@@ -21,7 +21,7 @@
           <ScaleQuestion :questions="affectQuestions" :max="5" v-model="affectAnswers"/>
           <button class="q-submit-btn" @click="handleAffectSubmit">提交本部分</button>
         </div>
-        <!-- step 2：主观体验量表 -->
+        <!-- step 2：AI拟人化感知量表 -->
         <div v-else-if="step === 2">
           <div class="q-instruction">
             以下是多个关于你在使用AI学习助手时的主观感受与体验的陈述，请根据你的真实体验，从1=“完全不同意”到5=“完全同意”中选择一个最符合你感受的选项。
@@ -30,8 +30,17 @@
           <button class="q-submit-btn" @click="handleSubjectiveSubmit">提交本部分</button>
         </div>
         
-        <!-- step 3：知识题 -->
+        <!-- step 3：Godspeed量表简化版 -->
         <div v-else-if="step === 3">
+          <div class="q-instruction">
+            请根据您刚才与AI学习助手的交互体验，在以下每对词语之间选择最符合您感受的数字。数字越接近某个词语，表示AI助手越接近该特征。以 "假的 1--2--3--4--5--6--7 自然的" 为例: 1 = 完全是假的 -> 7 = 完全自然的
+          </div>
+          <ScaleQuestion :questions="godQuestions" :max="7" v-model="godAnswers"/>
+          <button class="q-submit-btn" @click="handleGodSubmit">提交本部分</button>
+        </div>
+        
+        <!-- step 4：学习效果测试 -->
+        <div v-else-if="step === 4">
           <div class="q-instruction">
             请根据刚才的学习内容，回答以下问题。
           </div>
@@ -39,8 +48,8 @@
           <button class="q-submit-btn" @click="handleKnowledgeSubmit">提交本部分</button>
         </div>
         
-        <!-- step 4：认知负荷量表 -->
-        <div v-else-if="step === 4">
+        <!-- step 5：认知负荷量表 -->
+        <div v-else-if="step === 5">
           <div class="q-instruction">
             在刚才的AI学习过程中，您感到（7点量表：1=非常低，7=非常高）：
           </div>
@@ -48,8 +57,8 @@
           <button class="q-submit-btn" @click="handleCogSubmit">提交本部分</button>
         </div>
         
-        <!-- step 5：系统体验量表与开放题 -->
-        <div v-else-if="step === 5">
+        <!-- step 6：系统体验量表与开放题 -->
+        <div v-else-if="step === 6">
           <div class="q-instruction">
             请对您刚才使用AI学习系统的体验进行评价。（1=完全不同意，7=完全同意）
           </div>
@@ -57,16 +66,16 @@
           <button class="q-submit-btn" @click="handleSystemSubmit">提交本部分</button>
         </div>
         
-        <!-- step 6：社会临场感 -->
-        <div v-else-if="step === 6">
+        <!-- step 7：社会临场感 -->
+        <div v-else-if="step === 7">
           <div class="q-instruction">
             关于刚才与AI学习助手的交互体验（7点量表：1=完全不同意，7=完全同意）：
           </div>
           <ScaleQuestion :questions="socialQuestions" :max="7" v-model="socialAnswers"/>
           <button class="q-submit-btn" @click="handleSocialSubmit">提交本部分</button>
         </div>
-        <!-- step 7：技术信任量表 -->
-        <div v-else-if="step === 7">
+        <!-- step 8：技术信任量表 -->
+        <div v-else-if="step === 8">
           <div class="q-instruction">
             对于刚才使用的AI学习助手（7点量表：1=完全不同意，7=完全同意）：
           </div>
@@ -89,21 +98,19 @@ export default {
   data() {
     return {
       check: true,
-      step: 1,
+      step: 3,
       // step 0: 情感量表
       affectQuestions: [
-        { text: "目前您感到多大程度的：兴奋的" },
-        { text: "目前您感到多大程度的：热情的" },
-        { text: "目前您感到多大程度的：警觉的" },
-        { text: "目前您感到多大程度的：坚定的" },
-        { text: "目前您感到多大程度的: 活跃的" },
-        { text: "目前您感到多大程度的：沮丧的" },
-        { text: "目前您感到多大程度的: 烦恼的" },
-        { text: "目前您感到多大程度的: 内疚的" },
-        { text: "目前您感到多大程度的: 害怕的" },
-        { text: "目前您感到多大程度的: 敌意的" },
+        { text: "兴奋的" },
+        { text: "热情的" },
+        { text: "享受的" },
+        { text: "好奇的" },
+        { text: "沮丧的" },
+        { text: "焦虑的" },
+        { text: "无聊的" },
+        { text: "困惑的" },
       ],
-      affectAnswers: Array(10).fill(null),
+      affectAnswers: Array(8).fill(null),
       // 主观体验量表
       subjectiveQuestions: [
         { text: "它的自我介绍和称呼方式让我感觉像在和一个人打招呼。" },
@@ -126,7 +133,15 @@ export default {
         { text: "它模仿人类行为的方式让我觉得有些别扭。" },
       ],
       subjectiveAnswers: Array(18).fill(null),
-
+      godQuestions: [
+        { text: "假的/自然的" },
+        { text: "机器化的/人性化的" },
+        { text: "死板的/生动的" },
+        { text: "机械的/有生命的" },
+        { text: "不友好的/友好的" },
+        { text: "不友善的/友善的" },
+      ],
+      godAnswers: Array(6).fill(null),
       // 知识题
       knowledgeQuestions: [
         // 概念理解 1-8
@@ -241,20 +256,17 @@ export default {
           ]
         }
       ],
-      knowledgeAnswers: Array(12).fill(""),
+      knowledgeAnswers: Array(12).fill(null),
 
-      // step 3: 认知负荷量表
+      // step 5: 认知负荷量表
       cogQuestions: [
         { text: "心理需求：这个学习任务在心理和感知活动方面的要求程度如何？" },
-        { text: "身体需求：这个学习任务在身体活动方面的要求程度如何" },
-        { text: "时间需求：由于任务节奏，您感到多大的时间压力？" },
         { text: "努力程度：为了达到表现水平，您需要多努力地工作？" },
-        { text: "表现水平：您对自己完成任务目标的成功程度如何评价？" },
         { text: "挫折程度：在任务执行过程中，您感到多不安全、沮丧、烦躁？" },
       ],
-      cogAnswers: Array(6).fill(null),
+      cogAnswers: Array(3).fill(null),
 
-      // 系统体验量表与开放题
+      // 使用意愿与体验评估
       systemQuestions: [
         { text: "如果有机会，我愿意继续使用这个AI学习系统" },
         { text: "我会向同学推荐这个AI学习系统" },
@@ -262,13 +274,8 @@ export default {
         { text: "我对这次的AI学习体验感到满意" },
         { text: "这个AI系统帮助我有效学习了闪电知识" },
         { text: "我觉得用AI学习比传统方式更有趣" },
-        { text: "这个AI系统很容易使用" },
-        { text: "我的操作能够被系统准确理解" },
-        { text: "系统的反馈及时且有用" },
       ],
-      systemAnswers: Array(9).fill(null),
-      // systemOpen1: "",
-      // systemOpen2: "",
+      systemAnswers: Array(6).fill(null),
       
       // 系统体验量表与开放题
       socialQuestions: [
@@ -297,6 +304,7 @@ export default {
     this.$nextTick(() => {
       window.scrollTo({ top: 0, behavior: "smooth" });
     });
+
   },
   methods: {
     handleAffectSubmit () {
@@ -304,6 +312,9 @@ export default {
     },
     handleSubjectiveSubmit() {
       checkFillStep(this, this.subjectiveAnswers)
+    },
+    handleGodSubmit() {
+      checkFillStep(this, this.godAnswers)
     },
     handleKnowledgeSubmit() {
       checkFillStep(this, this.knowledgeAnswers)
@@ -334,12 +345,21 @@ export default {
       const affectPayload = {
         questions: this.affectQuestions,
         answers: this.affectAnswers,
-        postive: this.affectAnswers.slice(0, 5).reduce((sum, val) => sum + val, 0) / 5,
-        negative: this.affectAnswers.slice(5, 10).reduce((sum, val) => sum + val, 0) / 5,
+        positive: this.affectAnswers.slice(0, 4).reduce((sum, val) => sum + val, 0) / this.affectAnswers.length * 2,
+        negative: this.affectAnswers.slice(4, 8).reduce((sum, val) => sum + val, 0) / this.affectAnswers.length * 2,
       }
       const subjectivePayload = {
         questions: this.subjectiveQuestions,
         answers: this.subjectiveAnswers,
+      }
+      
+      const godPayload = {
+        questions: this.godQuestions,
+        answers: this.godAnswers,
+        anthropomorphism: this.godAnswers.slice(0, 2).reduce((sum, val) => sum + val, 0) / 2,
+        animacy: this.godAnswers.slice(2, 4).reduce((sum, val) => sum + val, 0) / 2,
+        likeability: this.godAnswers.slice(4, 6).reduce((sum, val) => sum + val, 0) / 2,
+        godspeed: this.godAnswers.slice(0, 6).reduce((sum, val) => sum + val, 0) / 6,
       }
               
       // 计分
@@ -348,40 +368,40 @@ export default {
       for (let i = 0; i < 8; i++) if (this.knowledgeAnswers[i] === correct[i]) concept++;
       for (let i = 8; i < 10; i++) if (this.knowledgeAnswers[i] === correct[i]) application++;
       for (let i = 10; i < 12; i++) if (this.knowledgeAnswers[i] === correct[i]) transfer++;
-      this.knowledgeSubScores = { concept, application, transfer };
-      this.knowledgeScore = concept + application + transfer;
+      const knowledgeScore = concept + application + transfer;
       const knowledgePayload = {
         questions: this.knowledgeQuestions,
         answers: this.knowledgeAnswers,
         conceptScore: concept,
         applicationScore: application,
         transferScore: transfer,
+        knowledgeScore: knowledgeScore,
       };
 
       const cogPayload = {
         questions: this.cogQuestions,
         answers: this.cogAnswers,
-        score: (this.cogAnswers.slice(0, 6).reduce((sum, val) => sum + val, 0) + 8 - 2 * this.cogAnswers[4]) / 6,
+        cogLoad: this.cogAnswers.reduce((sum, val) => sum + val, 0) / this.cogAnswers.length,
       }
 
       const systemPayload = {
         questions: this.systemQuestions,
         answers: this.systemAnswers,
         // 计算继续使用意愿、学习满意度、系统易用性分数
-        willingness: (this.systemAnswers[0] + this.systemAnswers[1] + this.systemAnswers[2]) / 3,
-        satisfaction: (this.systemAnswers[3] + this.systemAnswers[4] + this.systemAnswers[5]) / 3,
-        usability: (this.systemAnswers[6] + this.systemAnswers[7] + this.systemAnswers[8]) / 3,
+        willingness: this.systemAnswers.slice(0, 3).reduce((sum, val) => sum + val, 0) / this.systemAnswers.length * 2,
+        satisfaction: this.systemAnswers.slice(3, 6).reduce((sum, val) => sum + val, 0) / this.systemAnswers.length * 2,
       }
 
       const socialPayload = {
         questions: this.socialQuestions,
         answers: this.socialAnswers,
-        score: this.socialAnswers.slice(0, 6).reduce((sum, val) => sum + val, 0) / 6
+        socialPresence: this.socialAnswers.reduce((sum, val) => sum + val, 0) / this.socialAnswers.length
       }
 
       const techPayload = {
         questions: this.techQuestions,
         answers: this.techAnswers,
+        techTrust: this.techAnswers.reduce((sum, val) => sum + val, 0) / this.techAnswers.length
       }
 
       const payload = {
@@ -390,6 +410,7 @@ export default {
         time,
         affect: affectPayload,
         subjective: subjectivePayload,
+        godSpeed: godPayload,
         knowledge: knowledgePayload,
         cognitive: cogPayload,
         system: systemPayload,

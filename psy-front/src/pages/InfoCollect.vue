@@ -17,10 +17,10 @@
           <div class="q-question-block">
             <div class="q-question">
               <span class="q-qindex">1.</span>
-              姓名
+              如何称呼您？
             </div>
             <input type="text" v-model="form.userName" class="q-input-short" placeholder="请填写" />
-            <br><span v-if="!form.userName && form_uncomplete" class="q-error-tip">请填写姓名</span>
+            <br><span v-if="!form.userName && form_uncomplete" class="q-error-tip">请填写昵称</span>
           </div>
           <div class="q-question-block">
             <div class="q-question">
@@ -42,9 +42,6 @@
               </label>
               <label class="q-option" :class="{ selected: form.gender === '女' }">
                 <input type="radio" class="q-radio" value="女" v-model="form.gender" /> 女
-              </label>
-              <label class="q-option" :class="{ selected: form.gender === '其他' }">
-                <input type="radio" class="q-radio" value="其他" v-model="form.gender" /> 其他
               </label>
             </div>
             <br><span v-if="!form.gender && form_uncomplete" class="q-error-tip">请选择性别</span>
@@ -80,7 +77,7 @@
             </div>
             <br><span v-if="!form.grade && form_uncomplete" class="q-error-tip">请选择年级</span>
           </div>
-          <div class="q-question-block">
+          <!-- <div class="q-question-block">
             <div class="q-question">
               <span class="q-qindex">6.</span>
               您使用AI助手（如ChatGPT、文心一言、小爱同学等）的频率
@@ -93,7 +90,7 @@
               <label class="q-option" :class="{ selected: form.aiFrequency === '总是' }"><input type="radio" class="q-radio" value="总是" v-model="form.aiFrequency" /> 总是</label>
             </div>
             <br><span v-if="!form.aiFrequency && form_uncomplete" class="q-error-tip">请选择频率</span>
-          </div>
+          </div> -->
           <div class="q-question-block">
             <div class="q-question">
               <span class="q-qindex">7.</span>
@@ -129,7 +126,7 @@ export default {
         major: '',
         majorOther: '',
         grade: '',
-        aiFrequency: '',
+        // aiFrequency: '',
         aiAttitude: '',
         time: '',
       },
@@ -176,7 +173,8 @@ export default {
         major = this.form.majorOther.trim();
       }
       // 检查除了majorOther之外form的所有字段是否都有值
-      const requiredFields = ['userName', 'age', 'gender', 'major', 'grade', 'aiFrequency', 'aiAttitude'];
+      // const requiredFields = ['userName', 'age', 'gender', 'major', 'grade', 'aiFrequency', 'aiAttitude'];
+      const requiredFields = ['userName', 'age', 'gender', 'major', 'grade', 'aiAttitude'];
       for (const field of requiredFields) {
         if (!this.form[field] || (typeof this.form[field] === 'string' && this.form[field].trim() === '')) {
           this.form_uncomplete = true;
