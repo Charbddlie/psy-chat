@@ -256,7 +256,7 @@ export default {
         type: 'pre_questionnaire',
         data: payload
       }))
-      step(4)
+      step(this)
       this.$store.commit('setStateToNext', { currentState: this.$store.state.flowState, delay: 2000 });
     },
     showError(msg) {

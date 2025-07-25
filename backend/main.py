@@ -58,19 +58,20 @@ async def websocket_handler(websocket):
                     
                 elif msg_type == "info_collect":
                     result = await handle_submit(data.get("data", {}))
-                    print(f"发送消息：{result['type']}")
+                    print(f"发送消息：{result}")
                     await websocket.send(json.dumps(result))
                 elif msg_type == "pre_questionnaire":
                     result = await handle_pre_questionnaire(data.get("data", {}))
-                    print(f"发送消息：{result['type']}")
+                    print(f"发送消息：{result}")
                     await websocket.send(json.dumps(result))
                 elif msg_type == "post_questionnaire":
                     result = await handle_post_questionnaire(data.get("data", {}))
-                    print(f"发送消息：{result['type']}")
+                    print(f"发送消息：{result}")
                     await websocket.send(json.dumps(result))
                 else:
                     await websocket.send(json.dumps({"type": "info", "content": "已收到消息"}))
             except json.JSONDecodeError:
+                print(f"无效的JSON格式")
                 await websocket.send(json.dumps({"type": "error", "content": "无效的JSON格式"}))
             except Exception as e:
                 print(f"处理消息时出错: {e}")

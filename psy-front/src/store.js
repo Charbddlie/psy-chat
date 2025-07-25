@@ -16,7 +16,7 @@ export default createStore({
       postTest: 'postTest',
       end: 'end',
     },
-    flowState: 'AIChat',
+    flowState: 'readInfo',
   },
   mutations: {
     setUserInfo(state, payload) {

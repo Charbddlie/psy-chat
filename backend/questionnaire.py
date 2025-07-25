@@ -19,7 +19,8 @@ def check_required_fields(data, required_fields):
 
 async def handle_submit(data):
     required_fields = [
-        "userId", "userName", "age", "gender", "major", "grade", "aiFrequency", "aiAttitude", "time"
+        # "userId", "userName", "age", "gender", "major", "grade", "aiFrequency", "aiAttitude", "time"
+        "userId", "userName", "age", "gender", "major", "grade", "aiAttitude", "time"
     ]
     missing = check_required_fields(data, required_fields)
     if missing:
