@@ -28,7 +28,7 @@
           :class="['message', message.isUser ? 'user-message' : 'ai-message']"
         >
           <div class="avatar" v-if="!message.isUser">
-            <span>🤖</span>
+            <img src="/favicon.ico" alt="AI" class="AI-img"/>
           </div>
           <div class="message-content">
             {{ message.content }}
@@ -39,7 +39,7 @@
         </div>
       </transition-group>
       <div v-if="loading" class="message ai-message">
-        <div class="avatar"><span>🤖</span></div>
+        <div class="avatar"><img src="/favicon.ico" alt="AI" class="AI-img"/></div>
         <div class="message-content loading">
           <span class="dot"></span>
           <span class="dot"></span>
@@ -273,6 +273,11 @@
 .bubble-leave-to {
   opacity: 0;
   transform: translateY(-30px) scale(0.95);
+}
+.AI-img {
+  width: 28px; 
+  height: 28px; 
+  vertical-align: middle;
 }
 </style>
 
