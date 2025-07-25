@@ -38,7 +38,7 @@
           </div>
         </div>
       </transition-group>
-      <div v-if="loading" class="message ai-message">
+      <div v-if="loading && !inchunk" class="message ai-message">
         <div class="avatar"><img src="/favicon.ico" alt="AI" class="AI-img"/></div>
         <div class="message-content loading">
           <span class="dot"></span>
@@ -296,13 +296,15 @@ export default {
       errorMessage: '',
       chatComplete: false,
       endFlag: false,
+      last_AI_content: "",
+      inchunk: false,
     }
   },
   created (){
-    console.log('created')
+    // console.log('created')
   },
   mounted () {
-    console.log("onMounted")
+    console.log("mounted")
     this.$ws.addMessageListener(this.handleMessage);
     this.$ws.send(JSON.stringify({ 
       type: 'create', 
@@ -335,6 +337,7 @@ export default {
       }));
     },
     handleMessage (data) {
+      console.log(data)
       const response = JSON.parse(data);
       console.log('收到服务器消息:', response);
       
@@ -342,23 +345,40 @@ export default {
         case 'created':
           this.chat_id = response.chat_id;
           break;
-        case 'chat':
-          if (response.content) {
+        case 'chat_chunk':
+          if (!this.inchunk) {
+            this.inchunk = true;
             this.messages.push({
-              content: response.content,
+              content: "",
               isUser: false
             });
-            this.$nextTick(() => {
-              window.scrollTo({ top: 0, behavior: "smooth" });
-            });
           }
+          if (response.content) {
+            // 找到最后一个isUser: false的消息对象，并把content拼接到其content字段
+            for (let i = this.messages.length - 1; i >= 0; i--) {
+              if (!this.messages[i].isUser) {
+                this.messages[i].content += response.content;
+                break;
+              }
+            }
+            this.last_AI_content += response.content;
+          }
+          break;
+        case 'chat_chunk_start':
+          this.last_AI_content = ""
+          this.$nextTick(() => {
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          });
+          break;
+        case 'chat_chunk_end':
+          this.inchunk = false;
           this.loading = false;
-
           // 检查是否是聊天结束
-          if (response.content && response.content.includes('聊天已结束')) {
+          if (this.last_AI_content && this.last_AI_content.includes('聊天已结束')) {
             this.$store.commit('setStateToNext', { currentState: this.$store.state.flowState, delay: 2000 });
             this.endFlag = true;
           }
+          break;
       }
     },
     showError(msg) {

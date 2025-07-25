@@ -60,7 +60,7 @@ class LLM_Chat():
         self.mock_cnt = 0
 
 
-    def chat(self, message=None):
+    async def chat(self, message=None):
         # 初始化对话历史
         if not hasattr(self, 'history'):
             self.history = []
@@ -79,24 +79,22 @@ class LLM_Chat():
             self.history.append({"role": "user", "content": message_with_time})
             log("user", message_with_time, self.log_path)
         # 流式传输
-        try:
-            stream = openai.chat.completions.create(
-                model=self.model_name,
-                messages=self.history,
-                stream=True,
-            )
-            ai_message = ""
-            for chunk in stream:
-                if not chunk.choices: continue
-                delta = getattr(chunk.choices[0].delta, "content", None)
-                if delta:
-                    ai_message += delta
-                    # 实时返回流式内容（可选：如需逐步推送到前端，可yield或通过websocket分片发送）
-                    # 这里只拼接，最终整体返回
-            if not ai_message:
-                raise ValueError("API未返回有效内容")
-        except Exception as e:
-            return json.dumps({"type": "error", "content": f"API请求失败: {e}"})
+        stream = openai.chat.completions.create(
+            model=self.model_name,
+            messages=self.history,
+            stream=True,
+        )
+        ai_message = ""
+        for chunk in stream:
+            if not chunk.choices: continue
+            delta = getattr(chunk.choices[0].delta, "content", None)
+            if delta:
+                ai_message += delta
+                yield delta
+        
+        if not ai_message:
+            raise ValueError("API未返回有效内容")
+        
         # self.mock_cnt += 1
         # if self.mock_cnt >= 3: ai_message = "聊天已结束"
         # else: ai_message = "长"*300
@@ -106,9 +104,6 @@ class LLM_Chat():
 
         # 日志记录
         log("AI", ai_message, self.log_path)
-
-        # 返回给前端
-        return json.dumps({"type": "chat", "content": ai_message})
 
     def __str__(self):
         return f'{self.log_path}'

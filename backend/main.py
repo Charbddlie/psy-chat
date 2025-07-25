@@ -32,16 +32,30 @@ async def websocket_handler(websocket):
                     chat_instances[chat_id] = chat_instance
                     print(f"创建新chat实例: chat_id={chat_id}, {chat_instance}")
                     await websocket.send(json.dumps({"type": "created", "chat_id": chat_id}))
-                    json_message = chat_instance.chat()
-                    await websocket.send(json_message)
+                
+                    try:
+                        await websocket.send(json.dumps({"type": "chat_chunk_start"}))
+                        async for chunk in chat_instance.chat():
+                            await websocket.send(json.dumps({"type": "chat_chunk", "content": chunk}))
+                        await websocket.send(json.dumps({"type": "chat_chunk_end"}))
+                    except Exception as e:
+                        await websocket.send(json.dumps({"type": "error", "content": f"API请求失败: {e}"}))
+                    
                 elif msg_type == "chat":
                     chat_id = data.get("chat_id")
                     if not chat_id or chat_id not in chat_instances:
                         await websocket.send(json.dumps({"type": "error", "content": "无效的chat_id"}))
                         continue
                     chat_instance = chat_instances[chat_id]
-                    json_message = chat_instance.chat(data.get("content"))
-                    await websocket.send(json_message)
+
+                    try:
+                        await websocket.send(json.dumps({"type": "chat_chunk_start"}))
+                        async for chunk in chat_instance.chat(data.get("content")):
+                            await websocket.send(json.dumps({"type": "chat_chunk", "content": chunk}))
+                        await websocket.send(json.dumps({"type": "chat_chunk_end"}))
+                    except Exception as e:
+                        await websocket.send(json.dumps({"type": "error", "content": f"API请求失败: {e}"}))
+                    
                 elif msg_type == "info_collect":
                     result = await handle_submit(data.get("data", {}))
                     print(f"发送消息：{result['type']}")
