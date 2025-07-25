@@ -1,7 +1,0 @@
-log_dir = "log"
-info_dir = 'info'
-websocket_host = "0.0.0.0"
-websocket_port = 8765
-api_key = 'sk-NFCCO4oNrVpGZ5Bh23303046FeEf4b7c86Cb0c6085504f54'
-base_url = 'https://api.vveai.com/v1/'
-model_name = 'o4-mini'
