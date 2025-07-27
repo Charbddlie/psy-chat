@@ -69,27 +69,6 @@ class LLM_Chat():
             
             record = generate_log_record("user", message_with_time, log_time)
             self.log_records.append(record)
-
-        # # 只请求一次，直接请求api，不处理超时
-        # try:
-        #     stream = openai.chat.completions.create(
-        #         model=self.model_name,
-        #         messages=self.history,
-        #         stream=True,
-        #     )
-        #     ai_message = ""
-        #     for chunk in stream:
-        #         if not chunk.choices:
-        #             continue
-        #         delta = getattr(chunk.choices[0].delta, "content", None)
-        #         if delta:
-        #             ai_message += delta
-        #             yield delta
-        # except Exception as e:
-        #     raise RuntimeError(f"API请求失败: {e}")
-
-        # if not ai_message:
-        #     raise ValueError("API未返回有效内容")
         
         next_idx = len(self.history)
         # Set up timeout for the API call

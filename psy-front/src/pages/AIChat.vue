@@ -281,7 +281,6 @@
 }
 </style>
 
-
 <script>
 export default {
   name: 'AIChat',
@@ -298,6 +297,7 @@ export default {
       endFlag: false,
       last_AI_content: "",
       inchunk: false,
+      lastScrollHeight: 0, // 用于辅助滚动
     }
   },
   created() {
@@ -323,11 +323,48 @@ export default {
         sample_id: this.$store.state.userInfo.userId || 'noid'
       }));
     }
+    // 初始滚动到底部
+    this.$nextTick(() => {
+      this.scrollToBottom();
+    });
   },
   unmounted (){
     this.$ws.removeMessageListener(this.handleMessage);
   },
+  watch: {
+    // 监听消息变化
+    messages: {
+      handler() {
+        this.$nextTick(() => {
+          this.scrollToBottom();
+        });
+      },
+      deep: true
+    },
+    // 监听loading变化（思考div出现/消失）
+    loading(val) {
+      // 只有在loading为true时（AI正在思考），才滚动到底部
+      if (val === true) {
+        this.$nextTick(() => {
+          this.scrollToBottom();
+        });
+      }
+    }
+  },
   methods: {
+    scrollToBottom() {
+      // 使用ref更健壮
+      const container = this.$refs.messageContainer;
+      if (container) {
+        container.scrollTop = container.scrollHeight;
+      } else {
+        // fallback
+        const chatMessages = document.querySelector('.chat-messages');
+        if (chatMessages) {
+          chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+      }
+    },
     sendMessage() {
       // console.log(this.loading);
       if (!this.userInput.trim() || this.loading) return;
@@ -372,10 +409,7 @@ export default {
             });
             // 移动到最下面
             this.$nextTick(() => {
-              const chatMessages = document.querySelector('.chat-messages');
-              if (chatMessages) {
-                chatMessages.scrollTop = chatMessages.scrollHeight;
-              }
+              this.scrollToBottom();
             });
             this.last_AI_content = ""
             this.inchunk = true;
