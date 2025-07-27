@@ -34,7 +34,7 @@ async def websocket_handler(websocket):
                     await websocket.send(json.dumps({"type": "created", "chat_id": chat_id}))
                 
                     try:
-                        await websocket.send(json.dumps({"type": "chat_chunk_start"}))
+                        # await websocket.send(json.dumps({"type": "chat_chunk_start"}))
                         async for chunk in chat_instance.chat():
                             await websocket.send(json.dumps({"type": "chat_chunk", "content": chunk}))
                         await websocket.send(json.dumps({"type": "chat_chunk_end"}))

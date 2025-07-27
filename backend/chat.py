@@ -8,7 +8,7 @@ import websockets
 import json
 import tomli
 import os
-
+import asyncio
 import openai
 
 log_dir = tomli.load(open('settings.toml', 'rb'))['log_dir']
@@ -77,19 +77,41 @@ class LLM_Chat():
             message_with_time = f"{message}\n{{\"time_spent\": {int(time_spent)} minutes}}"
             self.history.append({"role": "user", "content": message_with_time})
             log("user", message_with_time, self.log_path)
-        # 流式传输
-        stream = openai.chat.completions.create(
-            model=self.model_name,
-            messages=self.history,
-            stream=True,
-        )
-        ai_message = ""
-        for chunk in stream:
-            if not chunk.choices: continue
-            delta = getattr(chunk.choices[0].delta, "content", None)
-            if delta:
-                ai_message += delta
-                yield delta
+        
+        # 流式传输，设置超时5秒，失败重试最多3次
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                # openai库不直接支持asyncio超时控制，这里用线程池包裹
+                loop = asyncio.get_event_loop()
+                stream = await asyncio.wait_for(
+                    loop.run_in_executor(
+                        None,
+                        lambda: openai.chat.completions.create(
+                            model=self.model_name,
+                            messages=self.history,
+                            stream=True,
+                        )
+                    ),
+                    timeout=5
+                )
+                ai_message = ""
+                for chunk in stream:
+                    if not chunk.choices:
+                        continue
+                    delta = getattr(chunk.choices[0].delta, "content", None)
+                    if delta:
+                        ai_message += delta
+                        yield delta
+                break  # 成功则跳出重试循环
+            except asyncio.TimeoutError:
+                if attempt == max_retries - 1:
+                    raise RuntimeError("API请求超时，重试3次仍未成功")
+                continue  # 超时则重试
+            except Exception as e:
+                if attempt == max_retries - 1:
+                    raise RuntimeError(f"API请求失败，重试3次仍未成功: {e}")
+                continue  # 其他异常也重试
         
         if not ai_message:
             raise ValueError("API未返回有效内容")

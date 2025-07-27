@@ -347,11 +347,31 @@ export default {
           break;
         case 'chat_chunk':
           if (!this.inchunk) {
-            this.inchunk = true;
             this.messages.push({
               content: "",
               isUser: false
             });
+            // 移动到最下面
+            this.$nextTick(() => {
+              const chatMessages = document.querySelector('.chat-messages');
+              if (chatMessages) {
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+              }
+            });
+            this.last_AI_content = ""
+            this.inchunk = true;
+            // 增加一个定时器，5秒后执行，也就是假设AI从开始说这句话到结束最多5s
+            setTimeout(() => {
+              if (this.inchunk){
+                this.inchunk = false;
+                this.loading = false;
+                // 检查是否是聊天结束
+                if (this.last_AI_content && this.last_AI_content.includes('聊天已结束')) {
+                  this.$store.commit('setStateToNext', { currentState: this.$store.state.flowState, delay: 2000 });
+                  this.endFlag = true;
+                }
+              }
+            }, 5000);
           }
           if (response.content) {
             // 找到最后一个isUser: false的消息对象，并把content拼接到其content字段
@@ -363,12 +383,6 @@ export default {
             }
             this.last_AI_content += response.content;
           }
-          break;
-        case 'chat_chunk_start':
-          this.last_AI_content = ""
-          this.$nextTick(() => {
-            window.scrollTo({ top: 0, behavior: "smooth" });
-          });
           break;
         case 'chat_chunk_end':
           this.inchunk = false;
