@@ -64,7 +64,6 @@
 import ScaleQuestion from './components/ScaleQuestion.vue';
 import SelectQuestion from './components/SelectQuestion.vue';
 import { checkFill, checkFillStep, step } from '@/tools';
-import { getCurrentInstance } from 'vue';
 export default {
   name: "PreQuestionnaire",
   components: {ScaleQuestion, SelectQuestion},
@@ -174,13 +173,8 @@ export default {
       errorMessage: '',
     };
   },
-  setup() {
-    const { proxy } = getCurrentInstance() || {};
-    if (proxy && proxy.$cookies) {
-      proxy.$cookies.set('flowState', 'preTest');
-    }
-  },
   created() {
+    this.$cookies.set('flowState', 'preTest');
     this.$nextTick(() => {
       window.scrollTo({ top: 0, behavior: "smooth" });
     });

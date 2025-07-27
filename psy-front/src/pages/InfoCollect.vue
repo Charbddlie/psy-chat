@@ -114,7 +114,6 @@
 
 <script>
 // import { inject } from 'vue';
-import { getCurrentInstance } from 'vue'
 export default {
   name: 'InfoCollect',
   data() {
@@ -136,13 +135,8 @@ export default {
       errorMessage: '',
     }
   },
-  setup(){
-    const { proxy } = getCurrentInstance() || {};
-    if (proxy && proxy.$cookies) {
-      proxy.$cookies.set('flowState', 'collectInfo');
-    }
-  },
   created() {
+    this.$cookies.set('flowState', 'collectInfo');
     // 生成8位随机id
     const randomId = Math.random().toString(36).substring(2, 10);
     this.form.userId = randomId;
@@ -150,6 +144,7 @@ export default {
     this.$nextTick(() => {
       window.scrollTo({ top: 0, behavior: "smooth" });
     });
+    this.$cookies.set('userId', randomId);
   },
   watch: {
     'form.major'(val) {
@@ -189,6 +184,8 @@ export default {
           return;
         }
       }
+
+      this.$cookies.set('userName', this.form.userName);
 
       // 将表单数据组装成 JSON
       const payload = {

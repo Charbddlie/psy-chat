@@ -16,14 +16,10 @@
 </template>
 
 <script>
-import { getCurrentInstance } from 'vue';
 export default {
   name: 'AllEnd',
-  setup() {
-    const { proxy } = getCurrentInstance() || {};
-    if (proxy && proxy.$cookies) {
-      proxy.$cookies.set('flowState', 'end');
-    }
+  created() {
+    this.$cookies.set('flowState', 'end');
   }
 }
 </script>

@@ -283,7 +283,6 @@
 
 
 <script>
-import { getCurrentInstance } from 'vue';
 export default {
   name: 'AIChat',
   data() {
@@ -301,15 +300,12 @@ export default {
       inchunk: false,
     }
   },
-  setup() {
-    const { proxy } = getCurrentInstance() || {};
-    if (proxy && proxy.$cookies) {
-      proxy.$cookies.set('flowState', 'AIChat');
-    }
+  created() {
+    this.$cookies.set('flowState', 'AIChat');
   },
   mounted () {
-    console.log("mounted")
     this.$ws.addMessageListener(this.handleMessage);
+    console.log("创建聊天")
     this.$ws.send(JSON.stringify({ 
       type: 'create', 
       sample_name: this.$store.state.userInfo.userName || 'noname', 

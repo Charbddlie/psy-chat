@@ -17,7 +17,6 @@ import PreQuestionnaire from './pages/PreQuestionnaire.vue'
 import AIChat from '@/pages/AIChat.vue'
 import PostQuestionnaire from './pages/PostQuestionnaire.vue'
 import AllEnd from './pages/AllEnd.vue'
-import { getCurrentInstance } from 'vue'
 
 export default {
   name: 'App',
@@ -26,13 +25,14 @@ export default {
     ...mapState(['flowState', 'flowStateEnum'])
   },
   created() {
-    const { proxy } = getCurrentInstance();
-    const userId = proxy.$cookies.get('userId') || '';
-    const userName = proxy.$cookies.get('userName') || '';
-    const flowState = proxy.$cookies.get('flowState') || '';
+    const userId = this.$cookies.get('userId') || '';
+    const userName = this.$cookies.get('userName') || '';
+    const flowState = this.$cookies.get('flowState') || '';
+    console.log('userId:', userId, 'userName:', userName, 'flowState:', flowState);
     if (!flowState || !userId || !userName) {
       return;
     } else {
+      console.log('获取cookie成功, userId:', userId, 'userName:', userName, 'flowState:', flowState);
       this.$store.commit('setUserInfo', { userId: userId, userName: userName });
       this.$store.commit('setState', flowState);
     }
