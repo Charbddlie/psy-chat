@@ -92,6 +92,7 @@
 import ScaleQuestion from './components/ScaleQuestion.vue';
 import SelectQuestion from './components/SelectQuestion.vue';
 import { checkFill, checkFillStep } from '@/tools';
+import { getCurrentInstance } from 'vue';
 export default {
   name: "PostQuestionnaire",
   components: {ScaleQuestion, SelectQuestion},
@@ -299,6 +300,12 @@ export default {
       techAnswers: Array(5).fill(null),
       errorMessage: '',
     };
+  },
+  setup() {
+    const { proxy } = getCurrentInstance() || {};
+    if (proxy && proxy.$cookies) {
+      proxy.$cookies.set('flowState', 'postTest');
+    }
   },
   created() {
     this.$nextTick(() => {

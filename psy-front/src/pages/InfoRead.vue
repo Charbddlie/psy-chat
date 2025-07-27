@@ -25,11 +25,18 @@
 </template>
 
 <script>
+import { getCurrentInstance } from 'vue';
 export default {
   name: 'InfoRead',
   methods: {
     startLearning() {
       this.$store.commit('setStateToNext', { currentState: this.$store.state.flowState, delay: 0 });
+    }
+  },
+  setup() {
+    const { proxy } = getCurrentInstance() || {};
+    if (proxy && proxy.$cookies) {
+      proxy.$cookies.set('flowState', 'readInfo');
     }
   }
 }

@@ -17,12 +17,25 @@ import PreQuestionnaire from './pages/PreQuestionnaire.vue'
 import AIChat from '@/pages/AIChat.vue'
 import PostQuestionnaire from './pages/PostQuestionnaire.vue'
 import AllEnd from './pages/AllEnd.vue'
+import { getCurrentInstance } from 'vue'
 
 export default {
   name: 'App',
   components: { InfoRead, InfoCollect, PreQuestionnaire, AIChat, PostQuestionnaire, AllEnd },
   computed: {
     ...mapState(['flowState', 'flowStateEnum'])
+  },
+  created() {
+    const { proxy } = getCurrentInstance();
+    const userId = proxy.$cookies.get('userId') || '';
+    const userName = proxy.$cookies.get('userName') || '';
+    const flowState = proxy.$cookies.get('flowState') || '';
+    if (!flowState || !userId || !userName) {
+      return;
+    } else {
+      this.$store.commit('setUserInfo', { userId: userId, userName: userName });
+      this.$store.commit('setState', flowState);
+    }
   }
 }
 </script>

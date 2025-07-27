@@ -114,6 +114,7 @@
 
 <script>
 // import { inject } from 'vue';
+import { getCurrentInstance } from 'vue'
 export default {
   name: 'InfoCollect',
   data() {
@@ -133,6 +134,12 @@ export default {
       submitted: false,
       form_uncomplete: false,
       errorMessage: '',
+    }
+  },
+  setup(){
+    const { proxy } = getCurrentInstance() || {};
+    if (proxy && proxy.$cookies) {
+      proxy.$cookies.set('flowState', 'collectInfo');
     }
   },
   created() {

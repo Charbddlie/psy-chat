@@ -7,6 +7,7 @@ export default createStore({
       userId: '',
       userName: '',
     },
+    // chat_id: '',
     // 流程状态枚举
     flowStateEnum: {
       readInfo: 'readInfo',
@@ -30,6 +31,11 @@ export default createStore({
           state.flowState = states[idx + 1];
         }, delay);
       }
-    }
+    },
+    setState(state, newState) {
+      if (Object.values(state.flowStateEnum).includes(newState)) {
+        state.flowState = newState;
+      }
+    },
   }
 })

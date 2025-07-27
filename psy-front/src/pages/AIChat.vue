@@ -283,6 +283,7 @@
 
 
 <script>
+import { getCurrentInstance } from 'vue';
 export default {
   name: 'AIChat',
   data() {
@@ -300,8 +301,11 @@ export default {
       inchunk: false,
     }
   },
-  created (){
-    // console.log('created')
+  setup() {
+    const { proxy } = getCurrentInstance() || {};
+    if (proxy && proxy.$cookies) {
+      proxy.$cookies.set('flowState', 'AIChat');
+    }
   },
   mounted () {
     console.log("mounted")
@@ -311,6 +315,19 @@ export default {
       sample_name: this.$store.state.userInfo.userName || 'noname', 
       sample_id: this.$store.state.userInfo.userId || 'noid'
     }));
+    // const storeChatId = this.$store.state.chat_id;
+    // if (storeChatId && storeChatId !== '') {
+    //   this.$ws.send(JSON.stringify({
+    //     type: 'continue',
+    //     chat_id: storeChatId,
+    //   }));
+    // } else {
+    //   this.$ws.send(JSON.stringify({ 
+    //     type: 'create', 
+    //     sample_name: this.$store.state.userInfo.userName || 'noname', 
+    //     sample_id: this.$store.state.userInfo.userId || 'noid'
+    //   }));
+    // }
   },
   unmounted (){
     this.$ws.removeMessageListener(this.handleMessage);
