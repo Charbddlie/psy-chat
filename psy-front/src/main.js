@@ -6,6 +6,7 @@ import './assets/error.css'
 import wsInstance from './tools.js'
 wsInstance.connect();
 import VueCookies from 'vue-cookies'
+VueCookies.config('5min')
 
 const app = createApp(App);
 // app.provide('globalWS', wsInstance);

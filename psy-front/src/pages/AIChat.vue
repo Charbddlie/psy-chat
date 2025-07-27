@@ -305,25 +305,24 @@ export default {
   },
   mounted () {
     this.$ws.addMessageListener(this.handleMessage);
-    console.log("创建聊天")
-    this.$ws.send(JSON.stringify({ 
-      type: 'create', 
-      sample_name: this.$store.state.userInfo.userName || 'noname', 
-      sample_id: this.$store.state.userInfo.userId || 'noid'
-    }));
-    // const storeChatId = this.$store.state.chat_id;
-    // if (storeChatId && storeChatId !== '') {
-    //   this.$ws.send(JSON.stringify({
-    //     type: 'continue',
-    //     chat_id: storeChatId,
-    //   }));
-    // } else {
-    //   this.$ws.send(JSON.stringify({ 
-    //     type: 'create', 
-    //     sample_name: this.$store.state.userInfo.userName || 'noname', 
-    //     sample_id: this.$store.state.userInfo.userId || 'noid'
-    //   }));
-    // }
+    const chat_id = this.$cookies.get('chat_id', 'chat_id') || null;
+    if (chat_id){
+      console.log("尝试继续聊天", chat_id)
+      this.$ws.send(JSON.stringify({ 
+        type: 'chat_continue',
+        chat_id: chat_id,
+        sample_name: this.$store.state.userInfo.userName || 'noname', 
+        sample_id: this.$store.state.userInfo.userId || 'noid'
+      }));
+    }
+    else{
+      console.log("创建聊天")
+      this.$ws.send(JSON.stringify({ 
+        type: 'chat_create', 
+        sample_name: this.$store.state.userInfo.userName || 'noname', 
+        sample_id: this.$store.state.userInfo.userId || 'noid'
+      }));
+    }
   },
   unmounted (){
     this.$ws.removeMessageListener(this.handleMessage);
@@ -348,15 +347,22 @@ export default {
         chat_id: this.chat_id,
         content: userMessage
       }));
+      console.log("发送消息")
+      const msg_count = this.messages.length;
+      // 15s后如果消息长度没变，就报错
+      // 这里最好不要触发，所以最好让服务器先报错，所以服务器设置10s超时
+      setTimeout(()=>{
+        if (this.messages.length === msg_count) this.errorMessage = "服务器连接超时，可以刷新页面重试"
+      }, 15000);
     },
     handleMessage (data) {
-      console.log(data)
       const response = JSON.parse(data);
-      console.log('收到服务器消息:', response);
+      console.log(response)
       
       switch (response.type) {
-        case 'created':
+        case 'chat_created':
           this.chat_id = response.chat_id;
+          this.$cookies.set('chat_id', response.chat_id)
           break;
         case 'chat_chunk':
           if (!this.inchunk) {
@@ -373,14 +379,14 @@ export default {
             });
             this.last_AI_content = ""
             this.inchunk = true;
-            // 增加一个定时器，5秒后执行，也就是假设AI从开始说这句话到结束最多5s
+            // 增加一个定时器，5秒后执行，也就是假设AI从开始说这句话到结束最多5s，防止收不到 chat_chunk_end
             setTimeout(() => {
               if (this.inchunk){
                 this.inchunk = false;
                 this.loading = false;
                 // 检查是否是聊天结束
                 if (this.last_AI_content && this.last_AI_content.includes('聊天已结束')) {
-                  this.$store.commit('setStateToNext', { currentState: this.$store.state.flowState, delay: 2000 });
+                  this.$store.commit('setStateToNext', { currentState: "AIChat", delay: 2000 });
                   this.endFlag = true;
                 }
               }
@@ -402,9 +408,58 @@ export default {
           this.loading = false;
           // 检查是否是聊天结束
           if (this.last_AI_content && this.last_AI_content.includes('聊天已结束')) {
-            this.$store.commit('setStateToNext', { currentState: this.$store.state.flowState, delay: 2000 });
+            this.$store.commit('setStateToNext', { currentState: "AIChat", delay: 2000 });
             this.endFlag = true;
           }
+          break;
+        case 'chat_time_out':
+          this.loading = false;
+          this.inchunk = false;
+          // 查找最后一条用户消息
+          for (let i = this.messages.length - 1; i >= 0; i--) {
+            if (this.messages[i].isUser) {
+              this.userInput = this.messages[i].content || "";
+              break;
+            }
+          }
+          this.errorMessage = "网络错误，请重新发送";
+          break;
+        case 'chat_continued':
+          this.loading = false
+          // 恢复历史消息
+          this.messages = [];
+          if (!Array.isArray(response.chat_history)) break;
+          
+          this.chat_id = response.chat_id;
+          this.$cookies.set('chat_id', response.chat_id)
+
+          console.log("聊天继续，恢复了", response.chat_history.length, "条消息")
+          response.chat_history.forEach(item => {
+            if (item.role === "assistant" || item.role === "user") {
+              this.messages.push({
+                content: item.content || "",
+                isUser: item.role === "user"
+              });
+            }
+          });
+          // 检查最后一条是否是user
+          if (response.chat_history.length > 0) {
+            const last = response.chat_history[response.chat_history.length - 1];
+            if (last.role === "user") {
+              this.userInput = last.content || "";
+              // 移除最后一条user消息（避免重复显示在消息区）
+              this.messages.pop();
+            } 
+            // else {
+            //   this.userInput = "";
+            // }
+          } 
+          // else {
+          //   this.userInput = "";
+          // }
+          break;
+        case 'error':
+          console.log(response.content);
           break;
       }
     },
