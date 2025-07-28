@@ -422,6 +422,10 @@ export default {
                 if (this.last_AI_content && this.last_AI_content.includes('聊天已结束')) {
                   this.$store.commit('setStateToNext', { currentState: "AIChat", delay: 2000 });
                   this.endFlag = true;
+                  this.$ws.send(JSON.stringify({
+                    type: 'chat_end',
+                    chat_id: this.chat_id,
+                  }));
                 }
               }
             }, 5000);
@@ -444,6 +448,10 @@ export default {
           if (this.last_AI_content && this.last_AI_content.includes('聊天已结束')) {
             this.$store.commit('setStateToNext', { currentState: "AIChat", delay: 2000 });
             this.endFlag = true;
+            this.$ws.send(JSON.stringify({
+              type: 'chat_end',
+              chat_id: this.chat_id,
+            }));
           }
           break;
         case 'chat_time_out':

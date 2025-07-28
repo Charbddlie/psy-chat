@@ -42,6 +42,8 @@ class LLM_Chat():
         # self.start_time = datetime.now()
         # self.last_time = None  # 用于计算resp_time
 
+        self.log_saved = False
+
     async def chat(self, message=None):
         # 初始化对话历史
         if not hasattr(self, 'history'):
@@ -109,6 +111,9 @@ class LLM_Chat():
         # self.last_time = log_time
         record = generate_log_record("AI", ai_message, log_time)
         self.log_records.append(record)
+        
+        # 删除chat instance是客户端发起的请求，但是为了防止收不到请求，在消息生成时就直接记录log了
+        if "聊天已结束" in ai_message: self.save_log()
 
     def get_history(self):
         # 跳过第一条
@@ -120,10 +125,12 @@ class LLM_Chat():
             result.append(new_item)
         return result
 
-    def end_chat(self):
+    def save_log(self):
         """
         聊天结束时调用，将log_records存储到chat.tsv（如有重复则chat_1.tsv, chat_2.tsv...）
         """
+        if self.log_saved: return
+        self.log_saved = True
         # 生成唯一文件名
         base_path = os.path.join(self.log_dir, "chat.tsv")
         log_path = base_path
@@ -143,6 +150,9 @@ class LLM_Chat():
 
     def __str__(self):
         return f'{self.log_path}'
+    
+    def __del__(self):
+        self.save_log()
 
 class LLMChatFactory:
     """LLM聊天工厂类"""

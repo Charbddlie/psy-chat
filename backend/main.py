@@ -100,6 +100,13 @@ async def websocket_handler(websocket):
                         continue
                     chat_instance = chat_instances[chat_id]["instance"]
                     await chat(websocket, chat_instance, chat_id, data.get("content"))
+                elif msg_type == "chat_end":
+                    chat_id = data.get("chat_id")
+                    if not chat_id or chat_id not in chat_instances:
+                        await websocket.send(json.dumps({"type": "error", "content": f"无效的chat_id:{chat_id}"}))
+                        continue
+                    del chat_instances[chat_id]
+                    await websocket.send(json.dumps({"type": "chat_ended", "chat_id": chat_id}))
 
                 elif msg_type == "info_collect":
                     result = await handle_submit(data.get("data", {}))
