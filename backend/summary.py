@@ -151,6 +151,7 @@ def sum_chat_time(chat_path):
     # 计算总交互时长(秒）
     import datetime
     times = []
+    if not os.path.exists(chat_path): return ""
     with open(chat_path, encoding="utf-8") as f:
         lines = f.readlines()
     for line in lines[1:]:
@@ -168,25 +169,32 @@ def sum_chat_time(chat_path):
 
 # 2. 遍历所有样本文件夹
 rows = []
-for d in os.listdir("log"):
-    if not os.path.isdir(d) or d.startswith("."):
+for d in [os.path.join("./log", x) for x in os.listdir("./log")]:
+    if not os.path.isdir(d):
         continue
     info_path = os.path.join(d, "info.json")
     pre_path = os.path.join(d, "pre.json")
     chat_path = os.path.join(d, "chat.tsv")
     post_path = os.path.join(d, "post.json")
-    # if not (os.path.exists(info_path) and os.path.exists(pre_path) and os.path.exists(chat_path) and os.path.exists(post_path)):
-    #     continue
 
     # 读取info.json
-    with open(info_path, encoding="utf-8") as f:
-        info = json.load(f)
+    if not os.path.exists(info_path):
+        info = {}
+    else:
+        with open(info_path, encoding="utf-8") as f:
+            info = json.load(f)
     # 读取pre.json
-    with open(pre_path, encoding="utf-8") as f:
-        pre = json.load(f)
+    if not os.path.exists(pre_path):
+        pre = {}
+    else:
+        with open(pre_path, encoding="utf-8") as f:
+            pre = json.load(f)
     # 读取post.json
-    with open(post_path, encoding="utf-8") as f:
-        post = json.load(f)
+    if not os.path.exists(post_path):
+        post = {}
+    else:
+        with open(post_path, encoding="utf-8") as f:
+            post = json.load(f)
 
     # 1. 基本信息
     row = []
