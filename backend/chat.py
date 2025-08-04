@@ -1,13 +1,15 @@
 import os
 from dataclasses import dataclass
 from datetime import datetime
-import tomli
 import asyncio
-import openai
-import re
-import aiohttp
+import os
+import datetime
+import tomli
+from openai import AsyncOpenAI  # 使用异步客户端
+import aiofiles  # 异步文件操作，替代同步IO
 
 log_dir = tomli.load(open('settings.toml', 'rb'))['log_dir']
+settings = tomli.load(open('settings.toml', 'rb'))
 
 def generate_log_record(role, text, time):
     """生成一条符合格式的日志记录（dict）"""
@@ -21,147 +23,182 @@ def generate_log_record(role, text, time):
     record_data = {k: v.strip().replace('\t', '    ') for k, v in record_data.items()}
     return record_data
 
-class LLM_Chat():
-    def __init__(self, sample_name, sample_id):
-        self.sample_name = sample_name
-        self.sample_id = sample_id
-        settings = tomli.load(open('settings.toml', 'rb'))
-        self.log_dir = f"{settings['log_dir']}/{sample_name}_{sample_id}"
+
+class LLMChat():
+    # 类级别的信号量，限制并发API请求数量
+    api_semaphore = asyncio.Semaphore(settings['api_semaphore'])
+    chat_test = settings['chat_test']
+
+    def __init__(self, user_name, user_id):
+        self.chat = self.chat_test if LLMChat.chat_test else self.chat_ai
+
+        self.user_name = user_name
+        self.user_id = user_id
+        self.log_dir = f"{settings['log_dir']}/{user_name}_{user_id}"
         os.makedirs(self.log_dir, exist_ok=True)
         self.log_path = os.path.join(self.log_dir, "chat.tsv")
+        
+        # 读取prompt（同步操作，初始化时执行一次影响较小）
         with open('prompt/thunder_prompt.txt', 'r', encoding='utf8') as f:
-            self.prompt = f.read().replace('{name}', sample_name)
-        # 支持自定义 API key 和 base url
-        openai.api_key = settings['api_key']
-        openai.base_url = settings['base_url']
+            self.prompt = f.read().replace('{name}', user_name)
+        
+        # 初始化异步OpenAI客户端（关键改进）
+        self.client = AsyncOpenAI(
+            api_key=settings['api_key'],
+            base_url=settings['base_url'],
+            timeout=10.0  # API超时设置（全局生效）
+        )
+        
+        self.model_name = settings.get('model_name', 'o4-mini')
+        self.log_records = []
+        self.history = [{"role": "user", "content": self.prompt}]
+        # 在初始化时从log_path读取历史聊天记录（除去第一条prompt），同步方式即可
+        if os.path.exists(self.log_path):
+            with open(self.log_path, "r", encoding="utf8") as f:
+                lines = f.readlines()
+            if lines:
+                header = lines[0].rstrip("\n").split("\t")
+                role_idx = header.index("role") if "role" in header else None
+                text_idx = header.index("text") if "text" in header else None
+                # 跳过header，从第二行开始
+                for line in lines[1:]:
+                    fields = line.rstrip("\n").split("\t")
+                    if len(fields) < max(role_idx, text_idx) + 1: continue
+                    role = 'assistant' if fields[role_idx] == 'AI' else 'user'
+                    text = fields[text_idx].replace("\\n", "\n")
+                    # 跳过第一条prompt（已在self.history[0]）
+                    self.history.append({"role": role, "content": text})
 
-        self.model_name = settings['model_name'] if 'model_name' in settings else 'o4-mini'
-        self.mock_cnt = 0
+    async def save_log(self):
+        """异步保存日志，避免文件IO阻塞（关键改进）"""
+        # 使用aiofiles替代同步文件操作
+        async with aiofiles.open(self.log_path, 'a', encoding='utf8') as f:
+            # 只写入新记录（避免重复写入）
+            for record in self.log_records:
+                line = f"{record['role']}\t{len(record['content'])}\t{record['time']}\t{record['content']}\n"
+                await f.write(line)
+            # 清空已写入的记录
+            self.log_records = []
 
-        self.log_records = []  # 存储所有日志记录（dict）
-        # self.start_time = datetime.now()
-        # self.last_time = None  # 用于计算resp_time
+    async def chat_ai(self, message=None):
+        """处理聊天请求的异步函数（改进版）"""
+        try:            
+            # 处理用户输入
+            if message is not None:
+                self.history.append({"role": "user", "content": message})
 
-        self.log_saved = False
-
-    async def chat(self, message=None):
-        # 初始化对话历史
-        if not hasattr(self, 'history'):
-            self.history = []
-            self.history.append({"role": "user", "content": self.prompt})
-        # 如果有用户输入，加入历史
-        elif message is not None:
-            # now = datetime.now()
-            # if hasattr(self, 'start_time'):
-            #     time_spent = (now - self.start_time).total_seconds() // 60
-            # else:
-            #     self.start_time = now
-            #     time_spent = 0
-            # message_with_time = f"{message}\n{{\"time_spent\": {int(time_spent)} minutes}}"
-            message_with_time = f"{message}"
-            self.history.append({"role": "user", "content": message_with_time})
-
-            # # 生成日志记录
-            log_time = datetime.now()
-            # if self.last_time is None:
-            #     self.last_time = log_time
-            # resp_time = f"{(log_time - self.last_time).total_seconds():.2f}"
-            # record = generate_log_record("user", message_with_time, resp_time, log_time)
-            # self.last_time = log_time
+                # 生成日志记录
+                log_time = datetime.datetime.now().isoformat()
+                user_record = {
+                    "role": "user",
+                    "content": message,
+                    "time": log_time
+                }
+                self.log_records.append(user_record)
+                await self.save_log()  # 直接调用异步保存（无需线程池）
             
-            record = generate_log_record("user", message_with_time, log_time)
+            # 记录当前历史长度，用于检查是否为过时回复
+            next_idx = len(self.history)
+            
+            # 使用信号量限制并发
+            async with LLMChat.api_semaphore:
+                try:
+                    # 异步调用OpenAI API（关键改进）
+                    stream = await self.client.chat.completions.create(
+                        model=self.model_name,
+                        messages=self.history,
+                        stream=True,
+                    )
+                    
+                    ai_message = ""
+                    # 异步迭代流式响应（关键改进）
+                    async for chunk in stream:  # 使用async for处理异步迭代器
+                        if not chunk.choices:
+                            continue
+                        delta = chunk.choices[0].delta.content
+                        if delta:
+                            ai_message += delta
+                            yield delta
+                            
+                    if not ai_message:
+                        raise ValueError("API未返回有效内容")
+
+                    # 检查是否为过时回复（避免历史已更新时追加旧回复）
+                    if next_idx != len(self.history):
+                        return
+                        
+                    # 记录AI回复
+                    self.history.append({"role": "assistant", "content": ai_message})
+                    
+                    # 生成AI日志
+                    log_time = datetime.datetime.now().isoformat()
+                    record = {
+                        "role": "AI",
+                        "content": ai_message,
+                        "time": log_time
+                    }
+                    self.log_records.append(record)
+                    await self.save_log()
+                    
+                except Exception as e:
+                    print(f"API调用错误: {e}")
+                    raise
+                    
+        except Exception as e:
+            print(f"聊天处理错误: {e}")
+            raise  
+
+    # chat test
+    async def chat_test(self, message=None):
+        """
+        仅用于测试的chat接口，不调用AI，仅记录用户消息并返回固定回复。
+        """
+        try:
+            if message is not None:
+                self.history.append({"role": "user", "content": message})
+
+                # 生成日志记录
+                log_time = datetime.datetime.now().isoformat()
+                user_record = {
+                    "role": "user",
+                    "content": message,
+                    "time": log_time
+                }
+                self.log_records.append(user_record)
+                await self.save_log()
+
+            # 生成一个固定的AI回复
+            ai_message = "（测试模式）收到消息：" + (message if message is not None else "")
+            self.history.append({"role": "assistant", "content": ai_message})
+
+            # 生成AI日志
+            log_time = datetime.datetime.now().isoformat()
+            record = {
+                "role": "AI",
+                "content": ai_message,
+                "time": log_time
+            }
             self.log_records.append(record)
-        
-        next_idx = len(self.history)
-        # Set up timeout for the API call
-        async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=10.0)) as session:
-            stream = openai.chat.completions.create(
-                model=self.model_name,
-                messages=self.history,
-                stream=True,
-                # Pass session to OpenAI client if needed (depends on OpenAI SDK version)
-            )
-            ai_message = ""
-            for chunk in stream:
-                if not chunk.choices:
-                    continue
-                delta = getattr(chunk.choices[0].delta, "content", None)
-                if delta:
-                    ai_message += delta
-                    yield delta
-            if not ai_message:
-                raise ValueError("API未返回有效内容")
+            await self.save_log()
 
+            # 模拟流式返回
+            for delta in ai_message:
+                yield delta
 
-        # self.mock_cnt += 1
-        # if self.mock_cnt >= 3: ai_message = "聊天已结束"
-        # else: ai_message = "长"*300
-
-        # 证明这是一个过时的回复，已经有新的回复了，这里可能有并发问题，但是这个场景不考虑
-        if next_idx != len(self.history): return
-        # 记录AI回复到历史
-        self.history.append({"role": "assistant", "content": ai_message})
-
-        # 生成AI日志记录
-        log_time = datetime.now()
-        # if self.last_time is None:
-        #     self.last_time = log_time
-        # resp_time = f"{(log_time - self.last_time).total_seconds():.2f}"
-        # record = generate_log_record("AI", ai_message, resp_time, log_time)
-        # self.last_time = log_time
-        record = generate_log_record("AI", ai_message, log_time)
-        self.log_records.append(record)
-        
-        # 删除chat instance是客户端发起的请求，但是为了防止收不到请求，在消息生成时就直接记录log了
-        if "聊天已结束" in ai_message: self.save_log()
+        except Exception as e:
+            print(f"测试聊天处理错误: {e}")
+            raise
 
     def get_history(self):
-        # 跳过第一条
+        """获取聊天历史，跳过第一条提示信息"""
+        if not hasattr(self, 'history') or self.history is None:
+            return []
+            
         result = []
         for item in self.history[1:]:
             new_item = item.copy()
-            # if "content" in new_item:
-            #     new_item["content"] = re.sub(r'\n\{"time_spent": \d+ minutes\}$', '', new_item["content"])
             result.append(new_item)
         return result
 
-    def save_log(self):
-        """
-        聊天结束时调用，将log_records存储到chat.tsv（如有重复则chat_1.tsv, chat_2.tsv...）
-        """
-        if self.log_saved: return
-        self.log_saved = True
-        # 生成唯一文件名
-        base_path = os.path.join(self.log_dir, "chat.tsv")
-        log_path = base_path
-        idx = 1
-        while os.path.exists(log_path):
-            log_path = os.path.join(self.log_dir, f"chat_{idx}.tsv")
-            idx += 1
-
-        # 写入文件
-        if self.log_records:
-            with open(log_path, 'w', encoding='utf8') as f:
-                # 写表头
-                header = list(self.log_records[0].keys())
-                f.write('\t'.join(header) + '\n')
-                for record in self.log_records:
-                    f.write('\t'.join(record.get(k, "") for k in header) + '\n')
-
     def __str__(self):
         return f'{self.log_path}'
-    
-    def __del__(self):
-        self.save_log()
-
-class LLMChatFactory:
-    """LLM聊天工厂类"""
-    @staticmethod
-    def create_llm_chat(sample_name, sample_id) -> LLM_Chat:
-        """
-        创建LLM聊天实例的工厂方法
-        
-        Returns:
-            LLM_Chat实例
-        """
-        return LLM_Chat(sample_name, sample_id)

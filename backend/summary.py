@@ -198,7 +198,7 @@ for d in [os.path.join("./log", x) for x in os.listdir("./log")]:
 
     # 1. 基本信息
     row = []
-    row.append(info.get("userId", ""))
+    row.append(info.get("user_id", ""))
     row.append(info.get("gender", ""))
     row.append(info.get("age", ""))
     row.append(info.get("major", ""))
