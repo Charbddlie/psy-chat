@@ -304,32 +304,28 @@ export default {
     this.$cookies.set('flowState', 'AIChat');
   },
   mounted () {
-    this.$ws.addMessageListener(this.handleMessage);
-    const chat_id = this.$cookies.get('chat_id', 'chat_id') || null;
-    if (chat_id){
-      console.log("尝试继续聊天", chat_id)
-      this.$ws.send(JSON.stringify({ 
-        type: 'chat_continue',
-        chat_id: chat_id,
-        sample_name: this.$store.state.userInfo.userName || 'noname', 
-        sample_id: this.$store.state.userInfo.userId || 'noid'
+    this.$ws.addMessageListener(this.handleChatMessage);
+    // 从store中获取chat_id, 然后看看要不要恢复记录
+    this.chat_id = this.$store.state.chat_id;
+    if (this.$store.state.has_history) {
+      // 恢复history后再发第一条消息
+      this.$ws.send(JSON.stringify({
+        type: 'chat_history',
+        chat_id: this.chat_id,
       }));
     }
     else{
-      console.log("创建聊天")
-      this.$ws.send(JSON.stringify({ 
-        type: 'chat_create', 
-        sample_name: this.$store.state.userInfo.userName || 'noname', 
-        sample_id: this.$store.state.userInfo.userId || 'noid'
-      }));
+      this.start = true
+      this.sendMessage();
     }
+    
     // 初始滚动到底部
     this.$nextTick(() => {
       this.scrollToBottom();
     });
   },
   unmounted (){
-    this.$ws.removeMessageListener(this.handleMessage);
+    this.$ws.removeMessageListener(this.handleChatMessage);
   },
   watch: {
     // 监听消息变化
@@ -353,7 +349,6 @@ export default {
   },
   methods: {
     scrollToBottom() {
-      // 使用ref更健壮
       const container = this.$refs.messageContainer;
       if (container) {
         container.scrollTop = container.scrollHeight;
@@ -366,9 +361,9 @@ export default {
       }
     },
     sendMessage() {
-      // console.log(this.loading);
-      if (!this.userInput.trim() || this.loading) return;
-      
+      if (this.loading) return;
+      if (!this.userInput.trim()) return;
+    
       // Add user message
       this.messages.push({
         content: this.userInput,
@@ -377,30 +372,34 @@ export default {
       
       const userMessage = this.userInput;
       this.userInput = '';
+
       this.loading = true;
-      
-      this.$ws.send(JSON.stringify({
-        type: 'chat',
-        chat_id: this.chat_id,
-        content: userMessage
-      }));
-      console.log("发送消息")
-      const msg_count = this.messages.length;
-      // 15s后如果消息长度没变，就报错
-      // 这里最好不要触发，所以最好让服务器先报错，所以服务器设置10s超时
-      setTimeout(()=>{
-        if (this.messages.length === msg_count) this.errorMessage = "服务器连接超时，可以刷新页面重试"
-      }, 15000);
+      if (this.start){
+        this.start = false
+        this.$ws.send(JSON.stringify({
+          type: 'chat',
+          chat_id: this.chat_id,
+          content: ""
+        }));
+        console.log("开始聊天")
+      }
+      else{
+        this.$ws.send(JSON.stringify({
+          type: 'chat',
+          chat_id: this.chat_id,
+          content: userMessage
+        }));
+        console.log("发送消息:", userMessage)
+      }
+      // const msg_count = this.messages.length;
+      // // 15s后如果消息长度没变，就报错
+      // // 这里最好不要触发，所以最好让服务器先报错，所以服务器设置10s超时
+      // setTimeout(()=>{
+      //   if (this.messages.length === msg_count) this.errorMessage = "服务器连接超时，可以刷新页面重试"
+      // }, 15000);
     },
-    handleMessage (data) {
-      const response = JSON.parse(data);
-      console.log(response)
-      
+    handleChatMessage (response) {
       switch (response.type) {
-        case 'chat_created':
-          this.chat_id = response.chat_id;
-          this.$cookies.set('chat_id', response.chat_id)
-          break;
         case 'chat_chunk':
           if (!this.inchunk) {
             this.messages.push({
@@ -420,7 +419,7 @@ export default {
                 this.loading = false;
                 // 检查是否是聊天结束
                 if (this.last_AI_content && this.last_AI_content.includes('聊天已结束')) {
-                  this.$store.commit('setStateToNext', { currentState: "AIChat", delay: 2000 });
+                  this.$store.commit('setStateToNext', { switchState: this.$store.state.flowStateEnum.AIChat, delay: 2000 });
                   this.endFlag = true;
                   this.$ws.send(JSON.stringify({
                     type: 'chat_end',
@@ -444,9 +443,18 @@ export default {
         case 'chat_chunk_end':
           this.inchunk = false;
           this.loading = false;
+          if (response.content) {
+            for (let i = this.messages.length - 1; i >= 0; i--) {
+              if (!this.messages[i].isUser) {
+                this.messages[i].content = response.content;
+                break;
+              }
+            }
+            this.last_AI_content = response.content;
+          }
           // 检查是否是聊天结束
           if (this.last_AI_content && this.last_AI_content.includes('聊天已结束')) {
-            this.$store.commit('setStateToNext', { currentState: "AIChat", delay: 2000 });
+            this.$store.commit('setStateToNext', { switchState: this.$store.state.flowStateEnum.AIChat, delay: 2000 });
             this.endFlag = true;
             this.$ws.send(JSON.stringify({
               type: 'chat_end',
@@ -455,7 +463,6 @@ export default {
           }
           break;
         case 'chat_time_out':
-          this.loading = false;
           this.inchunk = false;
           // 查找最后一条用户消息
           for (let i = this.messages.length - 1; i >= 0; i--) {
@@ -465,15 +472,12 @@ export default {
             }
           }
           this.errorMessage = "网络错误，请重新发送";
+          this.loading = false;
           break;
-        case 'chat_continued':
-          this.loading = false
+        case 'chat_history':
           // 恢复历史消息
           this.messages = [];
           if (!Array.isArray(response.chat_history)) break;
-          
-          this.chat_id = response.chat_id;
-          this.$cookies.set('chat_id', response.chat_id)
 
           console.log("聊天继续，恢复了", response.chat_history.length, "条消息")
           response.chat_history.forEach(item => {
@@ -491,14 +495,9 @@ export default {
               this.userInput = last.content || "";
               // 移除最后一条user消息（避免重复显示在消息区）
               this.messages.pop();
-            } 
-            // else {
-            //   this.userInput = "";
-            // }
+            }
           } 
-          // else {
-          //   this.userInput = "";
-          // }
+          this.loading = false
           break;
         case 'error':
           console.log(response.content);

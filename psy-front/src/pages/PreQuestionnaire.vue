@@ -218,8 +218,8 @@ export default {
       this.submitting = true;
       
       // 获取用户id（假设已存于store）
-      const userId = this.$store.state.userInfo?.userId || '';
-      const userName = this.$store.state.userInfo?.userName || '';
+      const user_id = this.$store.state.userInfo?.user_id || '';
+      const user_name = this.$store.state.userInfo?.user_name || '';
       // 时间戳
       const now = new Date();
       const pad = n => n.toString().padStart(2, '0');
@@ -233,8 +233,8 @@ export default {
 
       // 组装payload
       const payload = {
-        userId,
-        userName,
+        user_id,
+        user_name,
         time,
         excluded: isExcluded,
         knowledgePayload: {
@@ -255,10 +255,11 @@ export default {
       };
       this.$ws.send(JSON.stringify({
         type: 'pre_questionnaire',
-        data: payload
+        data: payload,
+        user_id: this.$store.state.userInfo.user_id
       }))
       step(this)
-      this.$store.commit('setStateToNext', { currentState: this.$store.state.flowState, delay: 2000 });
+      this.$store.commit('setStateToNext', { switchState: this.$store.state.flowStateEnum.preTest, delay: 2000 });
     },
     showError(msg) {
       this.errorMessage = msg;

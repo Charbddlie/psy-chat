@@ -11,26 +11,13 @@ import aiofiles  # 异步文件操作，替代同步IO
 log_dir = tomli.load(open('settings.toml', 'rb'))['log_dir']
 settings = tomli.load(open('settings.toml', 'rb'))
 
-def generate_log_record(role, text, time):
-    """生成一条符合格式的日志记录（dict）"""
-    record_data = {
-        'role': role,
-        'text_len': str(len(text)),
-        'time': str(time),
-        'text': text.replace('\n', '\\n'),
-    }
-    # 清理制表符
-    record_data = {k: v.strip().replace('\t', '    ') for k, v in record_data.items()}
-    return record_data
-
-
 class LLMChat():
     # 类级别的信号量，限制并发API请求数量
     api_semaphore = asyncio.Semaphore(settings['api_semaphore'])
     chat_test = settings['chat_test']
 
     def __init__(self, user_name, user_id):
-        self.chat = self.chat_test if LLMChat.chat_test else self.chat_ai
+        self.chat = self.test_chat if LLMChat.chat_test else self.ai_chat
 
         self.user_name = user_name
         self.user_id = user_id
@@ -50,8 +37,9 @@ class LLMChat():
         )
         
         self.model_name = settings.get('model_name', 'o4-mini')
-        self.log_records = []
         self.history = [{"role": "user", "content": self.prompt}]
+
+        has_content = False
         # 在初始化时从log_path读取历史聊天记录（除去第一条prompt），同步方式即可
         if os.path.exists(self.log_path):
             with open(self.log_path, "r", encoding="utf8") as f:
@@ -62,25 +50,34 @@ class LLMChat():
                 text_idx = header.index("text") if "text" in header else None
                 # 跳过header，从第二行开始
                 for line in lines[1:]:
+                    has_content = True
                     fields = line.rstrip("\n").split("\t")
                     if len(fields) < max(role_idx, text_idx) + 1: continue
                     role = 'assistant' if fields[role_idx] == 'AI' else 'user'
                     text = fields[text_idx].replace("\\n", "\n")
                     # 跳过第一条prompt（已在self.history[0]）
                     self.history.append({"role": role, "content": text})
+        if not has_content:
+            with open(self.log_path, "w", encoding="utf8") as f:
+                f.write("role\ttext_len\ttime\ttext\n")
+        
 
-    async def save_log(self):
-        """异步保存日志，避免文件IO阻塞（关键改进）"""
-        # 使用aiofiles替代同步文件操作
+    async def save_line(self, role, text, time):
+        """生成一条符合格式的日志记录（dict）"""
+        record_data = {
+            'role': role,
+            'text_len': str(len(text)),
+            'time': str(time),
+            'text': text.replace('\n', '\\n'),
+        }
+        # 清理制表符
+        record_data = {k: v.strip().replace('\t', '    ') for k, v in record_data.items()}
+        line = '\t'.join(record_data.values()) + '\n'
         async with aiofiles.open(self.log_path, 'a', encoding='utf8') as f:
-            # 只写入新记录（避免重复写入）
-            for record in self.log_records:
-                line = f"{record['role']}\t{len(record['content'])}\t{record['time']}\t{record['content']}\n"
-                await f.write(line)
-            # 清空已写入的记录
-            self.log_records = []
+            await f.write(line)
+        return line
 
-    async def chat_ai(self, message=None):
+    async def ai_chat(self, message=None):
         """处理聊天请求的异步函数（改进版）"""
         try:            
             # 处理用户输入
@@ -89,13 +86,7 @@ class LLMChat():
 
                 # 生成日志记录
                 log_time = datetime.datetime.now().isoformat()
-                user_record = {
-                    "role": "user",
-                    "content": message,
-                    "time": log_time
-                }
-                self.log_records.append(user_record)
-                await self.save_log()  # 直接调用异步保存（无需线程池）
+                await self.save_line("user", message, log_time)  # 直接调用异步保存（无需线程池）
             
             # 记录当前历史长度，用于检查是否为过时回复
             next_idx = len(self.history)
@@ -132,13 +123,7 @@ class LLMChat():
                     
                     # 生成AI日志
                     log_time = datetime.datetime.now().isoformat()
-                    record = {
-                        "role": "AI",
-                        "content": ai_message,
-                        "time": log_time
-                    }
-                    self.log_records.append(record)
-                    await self.save_log()
+                    await self.save_line("AI", ai_message, log_time)
                     
                 except Exception as e:
                     print(f"API调用错误: {e}")
@@ -149,7 +134,7 @@ class LLMChat():
             raise  
 
     # chat test
-    async def chat_test(self, message=None):
+    async def test_chat(self, message=None):
         """
         仅用于测试的chat接口，不调用AI，仅记录用户消息并返回固定回复。
         """
@@ -159,13 +144,7 @@ class LLMChat():
 
                 # 生成日志记录
                 log_time = datetime.datetime.now().isoformat()
-                user_record = {
-                    "role": "user",
-                    "content": message,
-                    "time": log_time
-                }
-                self.log_records.append(user_record)
-                await self.save_log()
+                await self.save_line("user", message, log_time)
 
             # 生成一个固定的AI回复
             ai_message = "（测试模式）收到消息：" + (message if message is not None else "")
@@ -173,13 +152,7 @@ class LLMChat():
 
             # 生成AI日志
             log_time = datetime.datetime.now().isoformat()
-            record = {
-                "role": "AI",
-                "content": ai_message,
-                "time": log_time
-            }
-            self.log_records.append(record)
-            await self.save_log()
+            await self.save_line("AI", ai_message, log_time)
 
             # 模拟流式返回
             for delta in ai_message:

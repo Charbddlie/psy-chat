@@ -42,11 +42,14 @@ class WebSocketService {
       // 连接建立后，发送队列中的所有消息
       while (this.messageQueue.length > 0) {
         const msg = this.messageQueue.shift();
+        console.log('send:', msg)
         this.ws.send(msg);
       }
     };
     this.ws.onmessage = (evt) => {
-      this.listeners.forEach(fn => fn(evt.data));
+      const response = JSON.parse(evt.data);
+      console.log('receive JSON data:', response)
+      this.listeners.forEach(fn => fn(response));
     };
     this.ws.onclose = () => { 
       this.ws = null; 
@@ -60,6 +63,7 @@ class WebSocketService {
 
   send(msg) {
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      console.log('send:', msg)
       this.ws.send(msg);
     } else {
       // 如果未连接，则放入队列

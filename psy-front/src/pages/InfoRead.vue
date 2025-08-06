@@ -29,7 +29,7 @@ export default {
   name: 'InfoRead',
   methods: {
     startLearning() {
-      this.$store.commit('setStateToNext', { currentState: this.$store.state.flowState, delay: 0 });
+      this.$store.commit('setStateToNext', { switchState: this.$store.state.flowStateEnum.readInfo, delay: 0 });
     }
   },
   created() {

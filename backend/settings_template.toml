@@ -1,7 +1,10 @@
 log_dir = "log"
-info_dir = 'info'
 websocket_host = "0.0.0.0"
 websocket_port = 8765
 api_key = "必填"
 base_url = "必填"
 model_name = 'o4-mini'
+# 是否启用聊天测试，聊天不会实际调用ai而是返回默认回复
+chat_test = false
+# 同时调用ai的最大数量
+api_semaphore = 99999

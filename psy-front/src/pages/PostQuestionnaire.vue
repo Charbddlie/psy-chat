@@ -406,8 +406,8 @@ export default {
       }
 
       const payload = {
-        userId: this.$store.state.userInfo?.userId || '',
-        userName: this.$store.state.userInfo?.userName || '',
+        user_id: this.$store.state.userInfo?.user_id || '',
+        user_name: this.$store.state.userInfo?.user_name || '',
         time,
         affect: affectPayload,
         subjective: subjectivePayload,
@@ -421,9 +421,10 @@ export default {
 
       this.$ws.send(JSON.stringify({
         type: 'post_questionnaire',
-        data: payload
+        data: payload,
+        user_id: this.$store.state.userInfo.user_id
       }))
-      this.$store.commit('setStateToNext', { currentState: this.$store.state.flowState, delay: 0 });
+      this.$store.commit('setStateToNext', { switchState: this.$store.state.flowStateEnum.postTest, delay: 0 });
     },
     showError(msg) {
       this.errorMessage = msg;

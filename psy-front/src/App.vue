@@ -25,16 +25,62 @@ export default {
     ...mapState(['flowState', 'flowStateEnum'])
   },
   created() {
-    const userId = this.$cookies.get('userId') || '';
-    const userName = this.$cookies.get('userName') || '';
-    const flowState = this.$cookies.get('flowState') || '';
-    console.log('userId:', userId, 'userName:', userName, 'flowState:', flowState);
-    if (!flowState || !userId || !userName) {
-      return;
-    } else {
-      console.log('获取cookie成功, userId:', userId, 'userName:', userName, 'flowState:', flowState);
-      this.$store.commit('setUserInfo', { userId: userId, userName: userName });
-      this.$store.commit('setState', flowState);
+    // 会在刚开始和info collect之后用到，只创建一次
+    this.$ws.addMessageListener(this.handleChatCreatedMessage);
+
+    const chat_id = this.$cookies.get('chat_id') || '';
+    const user_id = this.$cookies.get('user_id') || '';
+    const user_name = this.$cookies.get('user_name') || '';
+    console.log('user_id:', user_id, 'user_name:', user_name);
+    if (!chat_id || !user_id || !user_name) return;
+    console.log('获取cookie成功, chat_id:', chat_id, 'user_id:', user_id, 'user_name:', user_name);
+    
+    this.$ws.send(JSON.stringify({
+      type: 'chat_create',
+      chat_id: chat_id,
+      user_id: user_id,
+      user_name: user_name,
+    }));
+  },
+  methods: {
+    handleChatCreatedMessage (response) {
+      if (response.type == 'chat_created'){
+        let added = false;
+        console.log("chat_created")
+        this.$ws.removeMessageListener(this.handleChatCreatedMessage);
+        
+        this.$store.commit('setChatId', response.chat_id);
+        this.$store.commit('setUserInfo', { user_id: response.record.user_id, user_name: response.record.user_name });
+        this.$store.commit('setHasHistory', (response.record.chat && !response.record.chat_complete));
+        this.$cookies.set('user_id', response.record.user_id);
+        this.$cookies.set('user_name', response.record.user_name);
+        console.log('chat_id', response.chat_id)
+        this.$cookies.set('chat_id', response.chat_id);
+        // console.log(this.$store.state.chat_id)
+        // console.log('setskip')
+
+        added = false;
+        if (response.record.info) {
+          this.$store.commit('addSkipState', this.$store.state.flowStateEnum.collectInfo);
+          added = true;
+        }
+        if (response.record.pre) {
+          this.$store.commit('addSkipState', this.$store.state.flowStateEnum.preTest);
+          added = true;
+        }
+        if (response.record.post) {
+          this.$store.commit('addSkipState', this.$store.state.flowStateEnum.postTest);
+          added = true;
+        }
+        if (response.record.chat_complete) {
+          this.$store.commit('addSkipState', this.$store.state.flowStateEnum.AIChat);
+          added = true;
+        }
+        // 只要有任何一个被添加，readInfo也要添加
+        if (added) {
+          this.$store.commit('addSkipState', this.$store.state.flowStateEnum.readInfo);
+        }
+      }
     }
   }
 }
