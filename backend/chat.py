@@ -81,7 +81,7 @@ class LLMChat():
         """处理聊天请求的异步函数（改进版）"""
         try:            
             # 处理用户输入
-            if message is not None:
+            if message is not None and message != "":
                 self.history.append({"role": "user", "content": message})
 
                 # 生成日志记录
@@ -139,7 +139,7 @@ class LLMChat():
         仅用于测试的chat接口，不调用AI，仅记录用户消息并返回固定回复。
         """
         try:
-            if message is not None:
+            if message is not None and message != "":
                 self.history.append({"role": "user", "content": message})
 
                 # 生成日志记录

@@ -135,18 +135,18 @@ async def websocket_handler(websocket):
             try:
                 data = json.loads(message)
                 msg_type = data.get("type")
-                logger.debug(f"{websocket.remote_address} recv:{msg_type}")
+                logger.info(f"{websocket.remote_address} recv:{msg_type}")
 
                 if msg_type == "ping":
                     await websocket.send(json.dumps({"type": "pong", "content": "服务器正常"}))
-                    logger.debug(f"{websocket.remote_address} send:pong")
+                    logger.info(f"{websocket.remote_address} send:pong")
 
                 elif msg_type == "session_query":
                     # 根据用户名查询所有历史会话
                     search_name = data.get("search_name", "")
                     if not search_name:
                         await websocket.send(json.dumps({"type": "query_result", "records": []}))
-                        logger.debug(f"{websocket.remote_address} send:query_result, search_name:{None}")
+                        logger.info(f"{websocket.remote_address} send:query_result, no search_name")
                         continue
                         
                     # 搜索log目录下所有包含此名字的文件夹
@@ -155,7 +155,8 @@ async def websocket_handler(websocket):
                     
                     if not os.path.isdir(log_dir):
                         await websocket.send(json.dumps({"type": "query_result", "records": records}))
-                        logger.debug(f"{websocket.remote_address} send:query_result, search_name:{search_name}, no records")
+                        logger.info(f"{websocket.remote_address} send:query_result, search_name:{search_name}, no records")
+                        continue
                         
                     for dirname in os.listdir(log_dir):
                         folder_path = os.path.join(log_dir, dirname)
@@ -175,7 +176,7 @@ async def websocket_handler(websocket):
                     records.sort(key=lambda x: (-sum([x["info"], x["pre"], x["post"], x["chat"]]), -x["timestamp"]))
                     
                     await websocket.send(json.dumps({"type": "query_result", "records": records}))
-                    logger.debug(f"{websocket.remote_address} send:query_result, search_name:{search_name}, records:{" and ".join([f"{i["user_name"]}_{i["user_id"]}" for i in records])}")
+                    logger.info(f"{websocket.remote_address} send:query_result, search_name:{search_name}, records:{" and ".join([f"{i["user_name"]}_{i["user_id"]}" for i in records])}")
                 
                 elif msg_type == "chat_create":
                     # 如果还有chat_id
@@ -193,11 +194,11 @@ async def websocket_handler(websocket):
                             folder_path = os.path.join(log_dir, folder_name)
                             if not os.path.exists(folder_path):
                                 break
-                        logger.debug(f"{websocket.remote_address} exec:chat_create, user_name:{user_name}, create user_id:{user_id}")
+                        logger.info(f"{websocket.remote_address} exec:chat_create, user_name:{user_name}, create user_id:{user_id}")
                     if chat_id and chat_id in chat_instances:
                         chat_instance = chat_instances[chat_id]["instance"]
                         update_chat_last_active(chat_id)
-                        logger.debug(f"{websocket.remote_address} exec:chat_create, 再访问chat实例:{user_name}_{user_id} chat_id:{chat_id}")
+                        logger.info(f"{websocket.remote_address} exec:chat_create, 再访问chat实例:{user_name}_{user_id} chat_id:{chat_id}")
                     else:
                         # 没有chat_id或chat_id已失效
                         chat_id = str(uuid.uuid4())
@@ -209,12 +210,12 @@ async def websocket_handler(websocket):
                             "user_name": user_name,
                             "user_id": user_id,
                         }
-                        logger.debug(f"{websocket.remote_address} exec:chat_create, 创建新chat实例:{user_name}_{user_id} chat_id:{chat_id}")
+                        logger.info(f"{websocket.remote_address} exec:chat_create, 创建新chat实例:{user_name}_{user_id} chat_id:{chat_id}")
                     
                     record = get_record(websocket.remote_address, user_name, user_id)
                     # chat_history = chat_instance.get_history()
                     await websocket.send(json.dumps({"type": "chat_created", "chat_id": chat_id, 'record': record}))
-                    logger.debug(f"{websocket.remote_address} send:chat_created, chat_id:{chat_id}, {user_name}_{user_id}")
+                    logger.info(f"{websocket.remote_address} send:chat_created, chat_id:{chat_id}, {user_name}_{user_id}")
                     # await websocket.send(json.dumps({"type": "chat_created", "chat_id": chat_id, "chat_history": chat_history, 'record': record}))
                     # logger.debug(f"{websocket.remote_address} send:chat_created, chat_id:{chat_id}, {user_name}_{user_id} chat_id:{chat_id}, chat_history_len:{len(chat_history)}")
                     # await chat(websocket, chat_instance, chat_id)
@@ -230,7 +231,7 @@ async def websocket_handler(websocket):
                     await websocket.send(json.dumps({"type": "chat_history", "chat_history": chat_history}))
                     user_name = chat_instances[chat_id]['user_name']
                     user_id = chat_instances[chat_id]['user_id']
-                    logger.debug(f"{websocket.remote_address} send:chat_history, chat_id:{chat_id}, {user_name}_{user_id}, chat_history_len:{len(chat_history)}")
+                    logger.info(f"{websocket.remote_address} send:chat_history, chat_id:{chat_id}, {user_name}_{user_id}, chat_history_len:{len(chat_history)}")
                 elif msg_type == "chat":
                     chat_id = data.get("chat_id")
                     if not chat_id or chat_id not in chat_instances:
@@ -254,20 +255,20 @@ async def websocket_handler(websocket):
                     user_id = data.get("user_id")
                     result = await handle_submit(data.get("data", {}), user_id)
                     await websocket.send(json.dumps(result))
-                    logger.debug(f"{websocket.remote_address} send:info_collect, {result}")
+                    logger.info(f"{websocket.remote_address} send:info_collect, {result}")
                 elif msg_type == "pre_questionnaire":
                     user_id = data.get("user_id")
                     result = await handle_pre_questionnaire(data.get("data", {}), user_id)
                     await websocket.send(json.dumps(result))
-                    logger.debug(f"{websocket.remote_address} send:pre_questionnaire, {result}")
+                    logger.info(f"{websocket.remote_address} send:pre_questionnaire, {result}")
                 elif msg_type == "post_questionnaire":
                     user_id = data.get("user_id")
                     result = await handle_post_questionnaire(data.get("data", {}), user_id)
                     await websocket.send(json.dumps(result))
-                    logger.debug(f"{websocket.remote_address} send:post_questionnaire, {result}")
+                    logger.info(f"{websocket.remote_address} send:post_questionnaire, {result}")
                 else:
                     await websocket.send(json.dumps({"type": "info", "content": "已收到消息"}))
-                    logger.debug(f"{websocket.remote_address} send:info, {'已收到消息'}")
+                    logger.info(f"{websocket.remote_address} send:info, {'已收到消息'}")
             except json.JSONDecodeError:
                 await websocket.send(json.dumps({"type": "error", "content": "无效的JSON格式"}))
                 logger.exception(f"{websocket.remote_address} exec:无效的JSON格式")

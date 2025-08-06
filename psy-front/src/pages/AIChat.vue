@@ -361,17 +361,7 @@ export default {
       }
     },
     sendMessage() {
-      if (this.loading) return;
-      if (!this.userInput.trim()) return;
-    
-      // Add user message
-      this.messages.push({
-        content: this.userInput,
-        isUser: true
-      });
-      
-      const userMessage = this.userInput;
-      this.userInput = '';
+      if (!this.start && (this.loading || !this.userInput.trim())) return;
 
       this.loading = true;
       if (this.start){
@@ -384,6 +374,14 @@ export default {
         console.log("开始聊天")
       }
       else{
+        // Add user message
+        this.messages.push({
+          content: this.userInput,
+          isUser: true
+        });
+        
+        const userMessage = this.userInput;
+        this.userInput = '';
         this.$ws.send(JSON.stringify({
           type: 'chat',
           chat_id: this.chat_id,
