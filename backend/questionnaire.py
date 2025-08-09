@@ -24,15 +24,13 @@ async def handle_info(data, user_id):
     missing = check_required_fields(data, required_fields)
     if missing:
         return {"type": "error", "msg": f"缺少字段: {missing}"}
-    # write_header = not os.path.exists(INFO_TSV_PATH)
-    # with open(INFO_TSV_PATH, "a", encoding="utf-8") as f:
-    #     if write_header:
-    #         f.write('\t'.join(required_fields) + '\n')
-    #     f.write('\t'.join([str(data[k]).replace('\t', ' ') for k in required_fields]) + '\n')
     dir_name = f"{data['user_name']}_{user_id}"
     dir_path = os.path.join(LOG_DIR, dir_name)
     os.makedirs(dir_path, exist_ok=True)
     file_path = os.path.join(dir_path, "info.json")
+    # 为了防止有傻子做后测提交成前测然后覆盖info.json导致后测那边判断是刚刚做的时间不满七天不给做后测，所以这里就不覆盖存储了
+    if os.path.exists(file_path):
+        return {"type": "info_exist", "user_name": data['user_name']}
     with open(file_path, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
     return {"type": "info_success", "user_name": data['user_name']}

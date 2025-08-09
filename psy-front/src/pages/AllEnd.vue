@@ -1,10 +1,10 @@
 <template>
   <div class="end-container">
     <div class="end-card">
-      <h2>🎉实验已结束,感谢您的参与!🙏</h2>
+      <h2>🎉前测已结束,感谢您的参与!🙏</h2>
       <div class="end-content">
         <p>
-          您的问卷已成功提交。<br>
+          如果未被排除，请于七天后访问此网址参与后测<br>
           <span class="emoji">🌟🌩️📚</span>
         </p>
         <div class="end-tip">

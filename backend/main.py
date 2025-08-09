@@ -204,7 +204,7 @@ async def websocket_handler(websocket):
                             if not os.path.exists(folder_path):
                                 break
                         logger.info(f"{websocket.remote_address} exec:chat_create, user_name:{user_name}, create user_id:{user_id}")
-                    if chat_id and chat_id in chat_instances:
+                    if chat_id and chat_id in chat_instances and chat_instances[chat_id]["user_id"] == user_id and chat_instances[chat_id]["user_name"] == user_name:
                         chat_instance = chat_instances[chat_id]["instance"]
                         update_chat_last_active(chat_id)
                         logger.info(f"{websocket.remote_address} exec:chat_create, 再访问chat实例:{user_name}_{user_id} chat_id:{chat_id}")
