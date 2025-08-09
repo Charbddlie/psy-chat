@@ -34,6 +34,7 @@ def get_record(remote_address, user_name, user_id):
         "post": False,
         "chat": False,
         "chat_complete": False,
+        "excluded": False,
         "timestamp": 0
     }
     
@@ -61,6 +62,14 @@ def get_record(remote_address, user_name, user_id):
     pre_file = os.path.join(folder_path, "pre.json")
     if os.path.isfile(pre_file):
         record["pre"] = True
+        # 检查pre.json中的excluded是不是true，如果是，把所有字段都设置为True然后返回
+        try:
+            with open(pre_file, "r", encoding="utf-8") as f:
+                pre_data = json.load(f)
+            if pre_data.get("excluded", False) is True:
+                record["excluded"] = True
+        except Exception:
+            logger.info(f"{remote_address} exec:session_query, pre.json file error")
         
     post_file = os.path.join(folder_path, "post.json")
     if os.path.isfile(post_file):
@@ -84,7 +93,7 @@ def get_record(remote_address, user_name, user_id):
                         if last_fields[role_idx] == "AI" and "聊天已结束" in last_fields[text_idx]:
                             record["chat_complete"] = True
         except Exception as e:
-            logger.info(f"{remote_address} exec:session_query, error")
+            logger.info(f"{remote_address} exec:session_query, chat file error")
     return record
 
 async def cleanup_chat_instances():
@@ -253,7 +262,7 @@ async def websocket_handler(websocket):
 
                 elif msg_type == "info_collect":
                     user_id = data.get("user_id")
-                    result = await handle_submit(data.get("data", {}), user_id)
+                    result = await handle_info(data.get("data", {}), user_id)
                     await websocket.send(json.dumps(result))
                     logger.info(f"{websocket.remote_address} send:info_collect, {result}")
                 elif msg_type == "pre_questionnaire":
@@ -266,6 +275,11 @@ async def websocket_handler(websocket):
                     result = await handle_post_questionnaire(data.get("data", {}), user_id)
                     await websocket.send(json.dumps(result))
                     logger.info(f"{websocket.remote_address} send:post_questionnaire, {result}")
+                elif msg_type == "final_questionnaire":
+                    user_id = data.get("user_id")
+                    result = await handle_final_questionnaire(data.get("data", {}), user_id)
+                    await websocket.send(json.dumps(result))
+                    logger.info(f"{websocket.remote_address} send:final_questionnaire, {result}")
                 else:
                     await websocket.send(json.dumps({"type": "info", "content": "已收到消息"}))
                     logger.info(f"{websocket.remote_address} send:info, {'已收到消息'}")

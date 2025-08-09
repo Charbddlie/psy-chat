@@ -17,6 +17,8 @@ export default createStore({
       AIChat: 'AIChat',
       postTest: 'postTest',
       end: 'end',
+      finalTest: 'finalTest',
+      // endFinal: 'endFinal',
     },
     flowState: 'readInfo',
     skipStates: new Set(),
@@ -33,7 +35,7 @@ export default createStore({
     },
     // 添加跳过的state
     addSkipState(state, skipState) {
-      const debug = true
+      const debug = false
       if (debug) console.log('add skip:', skipState)
       if (debug) console.log('pre skip:', state.skipStates)
       if (!Object.values(state.flowStateEnum).includes(skipState)) return;
@@ -78,16 +80,18 @@ export default createStore({
         }
       }, delay);
     },
-    setState(state, newState) {
-      const states = Object.values(state.flowStateEnum);
-      let idx = states.indexOf(newState);
-      // 跳过skipStates中包含的state
-      while (idx !== -1 && idx < states.length && state.skipStates.has(states[idx])) {
-        idx++;
-      }
-      if (idx !== -1 && idx < states.length) {
-        state.flowState = states[idx];
-      }
+    setState(state, { newState, delay = 2000 }) {
+      setTimeout(() => {
+        const states = Object.values(state.flowStateEnum);
+        let idx = states.indexOf(newState);
+        // 跳过skipStates中包含的state
+        while (idx !== -1 && idx < states.length && state.skipStates.has(states[idx])) {
+          idx++;
+        }
+        if (idx !== -1 && idx < states.length) {
+          state.flowState = states[idx];
+        }
+      }, delay)
     },
   }
 })

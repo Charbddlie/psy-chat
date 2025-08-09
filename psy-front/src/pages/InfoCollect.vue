@@ -24,9 +24,11 @@
                     <span v-if="session.info" class="progress-item completed">基本信息已收集</span>
                     <span v-else class="progress-item">基本信息未收集</span>
                     
-                    <span v-if="session.pre" class="progress-item completed">前测已完成</span>
+                    <span v-if="session.pre" :class="['progress-item', session.excluded ? 'excluded' : 'completed']">
+                      {{ session.excluded ? '前测不合要求' : '前测已完成' }}
+                    </span>
                     <span v-else class="progress-item">前测未完成</span>
-                    
+
                     <span v-if="session.chat" class="progress-item completed">AI对话 {{ session.chat_complete ? '(已完成)' : '(未完成)' }}</span>
                     <span v-else class="progress-item">AI对话未开始</span>
                     
@@ -437,6 +439,10 @@ export default {
 .progress-item.completed {
   background: #dbeafe;
   color: #2563eb;
+}
+.progress-item.excluded {
+  background: #dbeafe;
+  color: #e53935;
 }
 
 .session-action {

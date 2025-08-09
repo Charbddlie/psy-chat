@@ -4,6 +4,7 @@ import csv
 
 header = [
     "ID",
+    "昵称",
     "性别(男=0,女=1)",
     "年龄",
     "专业",
@@ -33,7 +34,7 @@ header = [
     "前测情绪状态_8",
     "前测正性情绪_average",
     "前测负性情绪_average",
-    "总交互时长",
+    "总交互时长(秒)",
     "后测情绪状态_1",
     "后测情绪状态_2",
     "后测情绪状态_3",
@@ -88,7 +89,7 @@ header = [
     "知识后测_10",
     "知识后测_11",
     "知识后测_12",
-    "total score",
+    "知识后测_score",
     "NASA_1",
     "NASA_2",
     "NASA_3",
@@ -116,6 +117,13 @@ header = [
     # "技术信任_6",
     # "技术信任_7",
     "技术信任_average",
+    "延迟测试_1",
+    "延迟测试_2",
+    "延迟测试_3",
+    "延迟测试_4",
+    "延迟测试_5",
+    "延迟测试_score",
+    "保持率",
 ]
 
 def get_gender_code(gender):
@@ -124,18 +132,18 @@ def get_gender_code(gender):
     elif gender == "女":
         return 1
     else:
-        return ""
+        return "null"
 
 def safe_list(l, n):
     # 保证长度为n，不足补空
     if l is None:
         l = []
-    return [(str(x) if x is not None else "") for x in l] + [""] * (n - len(l))
+    return [(str(x) if x is not None else "null") for x in l] + ["null"] * (n - len(l))
 
 def avg(lst):
     vals = [x for x in lst if isinstance(x, (int, float))]
     if not vals:
-        return ""
+        return "null"
     return round(sum(vals) / len(vals), 2)
 
 def avg_by_index(lst, idxs):
@@ -144,14 +152,14 @@ def avg_by_index(lst, idxs):
         if i < len(lst) and lst[i] is not None:
             vals.append(lst[i])
     if not vals:
-        return ""
+        return "null"
     return round(sum(vals) / len(vals), 2)
 
 def sum_chat_time(chat_path):
     # 计算总交互时长(秒）
     import datetime
     times = []
-    if not os.path.exists(chat_path): return ""
+    if not os.path.exists(chat_path): return "null"
     with open(chat_path, encoding="utf-8") as f:
         lines = f.readlines()
     for line in lines[1:]:
@@ -159,23 +167,26 @@ def sum_chat_time(chat_path):
         if len(parts) >= 3:
             times.append(parts[2])
     if len(times) < 2:
-        return ""
+        return "null"
     try:
-        t0 = datetime.datetime.strptime(times[0], "%Y-%m-%d %H:%M:%S.%f")
-        t1 = datetime.datetime.strptime(times[-1], "%Y-%m-%d %H:%M:%S.%f")
+        t0 = datetime.datetime.strptime(times[0], "%Y-%m-%dT%H:%M:%S.%f")
+        t1 = datetime.datetime.strptime(times[-1], "%Y-%m-%dT%H:%M:%S.%f")
         return int((t1 - t0).total_seconds())
     except Exception:
-        return ""
+        return "null"
 
 # 2. 遍历所有样本文件夹
 rows = []
-for d in [os.path.join("./log", x) for x in os.listdir("./log")]:
-    if not os.path.isdir(d):
+for d in os.listdir("./log"):
+    dir_name = d
+    d = os.path.join("./log", d)
+    if not os.path.isdir(d) or '_' not in d:
         continue
     info_path = os.path.join(d, "info.json")
     pre_path = os.path.join(d, "pre.json")
     chat_path = os.path.join(d, "chat.tsv")
     post_path = os.path.join(d, "post.json")
+    final_path = os.path.join(d, "final.json")
 
     # 读取info.json
     if not os.path.exists(info_path):
@@ -195,15 +206,24 @@ for d in [os.path.join("./log", x) for x in os.listdir("./log")]:
     else:
         with open(post_path, encoding="utf-8") as f:
             post = json.load(f)
+    # 读取final.json
+    if not os.path.exists(final_path):
+        final = {}
+    else:
+        with open(final_path, encoding="utf-8") as f:
+            final = json.load(f)
 
     # 1. 基本信息
     row = []
-    row.append(info.get("user_id", ""))
-    row.append(info.get("gender", ""))
-    row.append(info.get("age", ""))
-    row.append(info.get("major", ""))
-    row.append(info.get("grade", ""))
-    row.append(info.get("aiAttitude", ""))
+    row.append(dir_name.split('_')[-1])
+    row.append('_'.join(dir_name.split('_')[:-1]))
+    # row.append(info.get("user_name", "null"))
+    # row.append(info.get("user_id", "null"))
+    row.append(info.get("gender", "null"))
+    row.append(info.get("age", "null"))
+    row.append(info.get("major", "null"))
+    row.append(info.get("grade", "null"))
+    row.append(info.get("aiAttitude", "null"))
 
     # 2. 知识前测
     pre_knowledge = pre.get("knowledgePayload", {}).get("answers", [])
@@ -211,8 +231,17 @@ for d in [os.path.join("./log", x) for x in os.listdir("./log")]:
 
     # 3. 根据知识前测是否纳入
     excluded = pre.get("excluded", False)
-    row.append("否" if not excluded else "是")
-
+    if excluded:
+        row.append("否")
+    else:
+        row.append("是")
+    # if excluded:
+    #     row.append("否")
+    #     rows.append(row)
+    #     continue
+    # else:
+    #     row.append("是")
+    
     # 4. ai经验
     ai_exp = pre.get("aiScalePayload", {}).get("answers", [])
     row += safe_list(ai_exp, 4)
@@ -222,8 +251,8 @@ for d in [os.path.join("./log", x) for x in os.listdir("./log")]:
     # 5. 前测情绪
     pre_affect = pre.get("affectPayload", {}).get("answers", [])
     row += safe_list(pre_affect, 8)
-    pre_pos = pre.get("affectPayload", {}).get("positive", "")
-    pre_neg = pre.get("affectPayload", {}).get("negative", "")
+    pre_pos = pre.get("affectPayload", {}).get("positive", "null")
+    pre_neg = pre.get("affectPayload", {}).get("negative", "null")
     row.append(pre_pos)
     row.append(pre_neg)
 
@@ -233,8 +262,8 @@ for d in [os.path.join("./log", x) for x in os.listdir("./log")]:
     # 7. 后测情绪
     post_affect = post.get("affect", {}).get("answers", [])
     row += safe_list(post_affect, 8)
-    post_pos = post.get("affect", {}).get("positive", "")
-    post_neg = post.get("affect", {}).get("negative", "")
+    post_pos = post.get("affect", {}).get("positive", "null")
+    post_neg = post.get("affect", {}).get("negative", "null")
     row.append(post_pos)
     row.append(post_neg)
 
@@ -254,12 +283,12 @@ for d in [os.path.join("./log", x) for x in os.listdir("./log")]:
     godspeed = post.get("godSpeed", {}).get("answers", [])
     row += safe_list(godspeed, 6)
     # 11. Godspeed三类平均
-    godspeed1 = godspeed[0] if len(godspeed) > 0 and godspeed[0] is not None else ""
-    godspeed2 = godspeed[1] if len(godspeed) > 1 and godspeed[1] is not None else ""
-    godspeed3 = godspeed[2] if len(godspeed) > 2 and godspeed[2] is not None else ""
-    godspeed4 = godspeed[3] if len(godspeed) > 3 and godspeed[3] is not None else ""
-    godspeed5 = godspeed[4] if len(godspeed) > 4 and godspeed[4] is not None else ""
-    godspeed6 = godspeed[5] if len(godspeed) > 5 and godspeed[5] is not None else ""
+    godspeed1 = godspeed[0] if len(godspeed) > 0 and godspeed[0] is not None else "null"
+    godspeed2 = godspeed[1] if len(godspeed) > 1 and godspeed[1] is not None else "null"
+    godspeed3 = godspeed[2] if len(godspeed) > 2 and godspeed[2] is not None else "null"
+    godspeed4 = godspeed[3] if len(godspeed) > 3 and godspeed[3] is not None else "null"
+    godspeed5 = godspeed[4] if len(godspeed) > 4 and godspeed[4] is not None else "null"
+    godspeed6 = godspeed[5] if len(godspeed) > 5 and godspeed[5] is not None else "null"
     row.append(avg_by_index(godspeed, [0,1]))  # Godspeed_1+Godspeed_1/2
     row.append(avg_by_index(godspeed, [2,3]))  # Godspeed_3+Godspeed_4/2
     row.append(avg_by_index(godspeed, [4,5]))  # Godspeed_5+Godspeed_6/2
@@ -267,45 +296,101 @@ for d in [os.path.join("./log", x) for x in os.listdir("./log")]:
     # 12. 知识后测
     post_knowledge = post.get("knowledge", {}).get("answers", [])
     row += safe_list(post_knowledge, 12)
-    row.append(post.get("knowledge", {}).get("knowledgeScore", ""))
+    post_score = post.get("knowledge", {}).get("knowledgeScore", "null")
+    row.append(post_score)
 
     # 13. NASA
     cognitive = post.get("cognitive", {}).get("answers", [])
     row += safe_list(cognitive, 3)
-    row.append(post.get("cognitive", {}).get("cogLoad", ""))
+    row.append(post.get("cognitive", {}).get("cogLoad", "null"))
 
     # 14. 使用意愿
     system = post.get("system", {}).get("answers", [])
     row += safe_list(system[:3], 3)
-    row.append(post.get("system", {}).get("willingness", ""))
+    row.append(post.get("system", {}).get("willingness", "null"))
 
     # 学习满意度
     row += safe_list(system[3:6] if len(system) >= 6 else [], 3)
-    row.append(post.get("system", {}).get("satisfaction", ""))
+    row.append(post.get("system", {}).get("satisfaction", "null"))
 
     # 15. 社会临场感
     social = post.get("social", {}).get("answers", [])
     row += safe_list(social, 6)
-    row.append(post.get("social", {}).get("socialPresence", ""))
+    row.append(post.get("social", {}).get("socialPresence", "null"))
 
     # 16. 技术信任
     technical = post.get("technical", {}).get("answers", [])
     row += safe_list(technical, 5)
-    row.append(post.get("technical", {}).get("techTrust", ""))
+    row.append(post.get("technical", {}).get("techTrust", "null"))
+
+    # 17. 延迟测试
+    final_knowledge = final.get("knowledgePayload", {}).get("answers", [])
+    row += safe_list(final_knowledge, 5)
+    final_score = final.get("knowledgePayload", {}).get("score", "null")
+    row.append(final_score)
+    try:
+        row.append(f"{round((float(final_score)/float(post_score))*100, 2)}%")
+    except:
+        row.append("null")
 
     rows.append(row)
 
-# 3. 写入TSV
+# 对rows中的所有数字，如果小数位数大于2，都保留两位小数
+for i, row in enumerate(rows):
+    new_row = []
+    for val in row:
+        # 检查是否为float或可以转为float且不是None
+        if isinstance(val, float):
+            # 只对有小数点的float保留两位
+            new_row.append(round(val, 2))
+        elif isinstance(val, int):
+            new_row.append(val)
+        else:
+            # 尝试转为float再判断
+            try:
+                fval = float(val)
+                # 如果原始字符串是数字且有小数点
+                if '.' in str(val):
+                    # 保留两位小数
+                    fval_2 = round(fval, 2)
+                    # 保持字符串类型与原类型一致
+                    if isinstance(val, str):
+                        # 去除多余的.0
+                        if fval_2 == int(fval_2):
+                            new_row.append(str(int(fval_2)))
+                        else:
+                            new_row.append(f"{fval_2:.2f}")
+                    else:
+                        new_row.append(fval_2)
+                else:
+                    new_row.append(val)
+            except Exception:
+                new_row.append(val)
+    rows[i] = new_row
+
+# 3. 写入TSV (UTF-8)
+skip_count_utf8 = 0
 with open("log/summary_utf8.tsv", "w", encoding="utf-8", newline="") as f:
     writer = csv.writer(f, delimiter="\t")
     writer.writerow(header)
     for row in rows:
-        writer.writerow(row)
+        try:
+            writer.writerow(row)
+        except Exception as e:
+            print(f"[UTF-8] 跳过行: {row}，错误: {e}")
+            skip_count_utf8 += 1
+print(f"[UTF-8] 共跳过 {skip_count_utf8} 行")
 
-# 3. 写入TSV
+# 3. 写入TSV (GBK)
+skip_count_gbk = 0
 with open("log/summary_gbk.tsv", "w", encoding="gbk", newline="") as f:
     writer = csv.writer(f, delimiter="\t")
     writer.writerow(header)
     for row in rows:
-        writer.writerow(row)
+        try:
+            writer.writerow(row)
+        except Exception as e:
+            print(f"[GBK] 跳过行: {row}，错误: {e}")
+            skip_count_gbk += 1
+print(f"[GBK] 共跳过 {skip_count_gbk} 行")
 

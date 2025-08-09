@@ -17,7 +17,7 @@ def check_required_fields(data, required_fields):
             return field
     return None
 
-async def handle_submit(data, user_id):
+async def handle_info(data, user_id):
     required_fields = [
         "user_name", "age", "gender", "major", "grade", "aiAttitude", "time"
     ]
@@ -35,7 +35,7 @@ async def handle_submit(data, user_id):
     file_path = os.path.join(dir_path, "info.json")
     with open(file_path, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
-    return {"type": "success", "user_name": data['user_name']}
+    return {"type": "info_success", "user_name": data['user_name']}
 
 async def handle_post_questionnaire(data, user_id):
     required_fields = ["user_name"]
@@ -48,7 +48,7 @@ async def handle_post_questionnaire(data, user_id):
     file_path = os.path.join(dir_path, "post.json")
     with open(file_path, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
-    return {"type": "success", "user_name": data['user_name']}
+    return {"type": "post_questionnaire_success", "user_name": data['user_name']}
 
 async def handle_pre_questionnaire(data, user_id):
     required_fields = [
@@ -63,5 +63,20 @@ async def handle_pre_questionnaire(data, user_id):
     file_path = os.path.join(dir_path, "pre.json")
     with open(file_path, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
-    return {"type": "success", "user_name": data['user_name']}
+    return {"type": "pre_questionnaire_success", "user_name": data['user_name']}
+
+async def handle_final_questionnaire(data, user_id):
+    required_fields = [
+        "user_name"
+    ]
+    missing = check_required_fields(data, required_fields)
+    if missing:
+        return {"type": "error", "msg": f"缺少字段: {missing}"}
+    dir_name = f"{data['user_name']}_{user_id}"
+    dir_path = os.path.join(LOG_DIR, dir_name)
+    os.makedirs(dir_path, exist_ok=True)
+    file_path = os.path.join(dir_path, "final.json")
+    with open(file_path, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+    return {"type": "final_questionnaire_success", "user_name": data['user_name']}
 

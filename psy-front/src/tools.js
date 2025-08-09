@@ -10,7 +10,7 @@ export function checkFill (t, arr) {
 	return true
 }
 
-export function step (t){
+export function step (t) {
 	t.step++;
 	t.$nextTick(() => {
 		window.scrollTo({ top: 0, behavior: "smooth" });
@@ -21,6 +21,13 @@ export function checkFillStep (t, arr) {
 	if (checkFill(t, arr)){
 		step(t)
 	}
+}
+
+export function stepTo (t, stepNum) {
+  t.step = stepNum;
+	t.$nextTick(() => {
+		window.scrollTo({ top: 0, behavior: "smooth" });
+	});
 }
 
 class WebSocketService {

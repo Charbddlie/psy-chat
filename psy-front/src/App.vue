@@ -6,6 +6,8 @@
     <AIChat v-if="flowState === flowStateEnum.AIChat" />
     <PostQuestionnaire v-if="flowState === flowStateEnum.postTest" />
     <AllEnd v-if="flowState === flowStateEnum.end" />
+    <FinalQuestion v-if="flowState === flowStateEnum.finalTest" />
+    <!-- <AllEnd v-if="flowState === flowStateEnum.endFinal" /> -->
   </div>
 </template>
 
@@ -17,10 +19,11 @@ import PreQuestionnaire from './pages/PreQuestionnaire.vue'
 import AIChat from '@/pages/AIChat.vue'
 import PostQuestionnaire from './pages/PostQuestionnaire.vue'
 import AllEnd from './pages/AllEnd.vue'
+import FinalQuestion from './pages/FinalQuestion.vue'
 
 export default {
   name: 'App',
-  components: { InfoRead, InfoCollect, PreQuestionnaire, AIChat, PostQuestionnaire, AllEnd },
+  components: { InfoRead, InfoCollect, PreQuestionnaire, AIChat, PostQuestionnaire, AllEnd, FinalQuestion },
   computed: {
     ...mapState(['flowState', 'flowStateEnum'])
   },
@@ -45,7 +48,6 @@ export default {
   methods: {
     handleChatCreatedMessage (response) {
       if (response.type == 'chat_created'){
-        let added = false;
         console.log("chat_created")
         this.$ws.removeMessageListener(this.handleChatCreatedMessage);
         
@@ -58,28 +60,35 @@ export default {
         this.$cookies.set('chat_id', response.chat_id);
         // console.log(this.$store.state.chat_id)
         // console.log('setskip')
-
-        added = false;
+        
+        // let added = false;
         if (response.record.info) {
           this.$store.commit('addSkipState', this.$store.state.flowStateEnum.collectInfo);
-          added = true;
+          // added = true;
         }
         if (response.record.pre) {
           this.$store.commit('addSkipState', this.$store.state.flowStateEnum.preTest);
-          added = true;
+          // added = true;
         }
         if (response.record.post) {
           this.$store.commit('addSkipState', this.$store.state.flowStateEnum.postTest);
-          added = true;
+          // added = true;
         }
         if (response.record.chat_complete) {
           this.$store.commit('addSkipState', this.$store.state.flowStateEnum.AIChat);
-          added = true;
+          // added = true;
         }
-        // 只要有任何一个被添加，readInfo也要添加
-        if (added) {
-          this.$store.commit('addSkipState', this.$store.state.flowStateEnum.readInfo);
+        if (response.record.excluded) {
+          this.$store.commit('addSkipState', this.$store.state.flowStateEnum.collectInfo);
+          this.$store.commit('addSkipState', this.$store.state.flowStateEnum.preTest);
+          this.$store.commit('addSkipState', this.$store.state.flowStateEnum.AIChat);
+          this.$store.commit('addSkipState', this.$store.state.flowStateEnum.postTest);
+          // added = true;
         }
+        // // 只要有任何一个被添加，readInfo也要添加
+        // if (added) {
+        //   this.$store.commit('addSkipState', this.$store.state.flowStateEnum.readInfo);
+        // }
       }
     }
   }

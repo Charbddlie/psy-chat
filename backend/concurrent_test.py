@@ -51,25 +51,6 @@ async def test_chat_session(session_id):
 
         # 连接WebSocket
         async with websockets.connect(ws_url) as websocket:
-            # 连接建立后，计数
-            async with connected_count_lock:
-                connected_count += 1
-                if connected_count == total_connections:
-                    all_connected_event.set()
-
-            # 等待所有连接建立
-            await all_connected_event.wait()
-
-            # 等待到统一的开始时间戳
-            while True:
-                async with start_timestamp_lock:
-                    current_start_timestamp = start_timestamp
-                now = time.time()
-                wait_time = current_start_timestamp - now
-                if wait_time <= 0:
-                    break
-                await asyncio.sleep(min(wait_time, 0.05))
-
             # 创建聊天会话
             await websocket.send(json.dumps({
                 "type": "chat_create",
@@ -89,6 +70,30 @@ async def test_chat_session(session_id):
                 print(f"[{session_id}] 无法获取chat_id")
                 return
 
+            # 连接建立后，计数
+            async with connected_count_lock:
+                connected_count += 1
+                if connected_count == total_connections:
+                    all_connected_event.set()
+
+            # 等待所有连接建立
+            await all_connected_event.wait()
+
+            # 等待到统一的开始时间戳
+            while True:
+                async with start_timestamp_lock:
+                    current_start_timestamp = start_timestamp
+                now = time.time()
+                wait_time = current_start_timestamp - now
+                if wait_time <= 0:
+                    break
+                await asyncio.sleep(min(wait_time, 0.05))
+            
+            await websocket.send(json.dumps({
+                "type": "chat",
+                "chat_id": chat_id,
+                "content": "",
+            }))
             # 接收AI的初始回复
             first_message_start = None
             first_response_received = False

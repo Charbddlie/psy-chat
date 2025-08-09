@@ -20,6 +20,7 @@
         </div>
       </div>
       <button class="start-btn" @click="startLearning">进入对话</button>
+      <button class="start-btn" @click="startFinal">进入后测</button>
     </div>
   </div>
 </template>
@@ -30,6 +31,9 @@ export default {
   methods: {
     startLearning() {
       this.$store.commit('setStateToNext', { switchState: this.$store.state.flowStateEnum.readInfo, delay: 0 });
+    },
+    startFinal(){
+      this.$store.commit('setState', { newState: this.$store.state.flowStateEnum.finalTest, delay: 0 });
     }
   },
   created() {

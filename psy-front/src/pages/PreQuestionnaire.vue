@@ -63,7 +63,7 @@
 <script>
 import ScaleQuestion from './components/ScaleQuestion.vue';
 import SelectQuestion from './components/SelectQuestion.vue';
-import { checkFill, checkFillStep, step } from '@/tools';
+import { checkFill, checkFillStep, step, stepTo } from '@/tools';
 export default {
   name: "PreQuestionnaire",
   components: {ScaleQuestion, SelectQuestion},
@@ -191,10 +191,7 @@ export default {
       const q1 = this.knowledgeAnswers[0];
       if (abcCount > 4 || q1 === "C" || q1 === "D") {
         this.excluded = true;
-        this.step = 4;
-        this.$nextTick(() => {
-          window.scrollTo({ top: 0, behavior: "smooth" });
-        });
+        stepTo(this, 4)
         // 依然提交数据到后端，标记为排除
         this.submitAllQuestionnaireData(true);
         return;
@@ -210,6 +207,7 @@ export default {
     handleAffectSubmit() {
       if (!checkFill(this, this.affectAnswers)) return
       this.excluded = false;
+      step(this)
       this.submitAllQuestionnaireData(false);
     },
     // 提交所有问卷数据到后端
@@ -258,8 +256,8 @@ export default {
         data: payload,
         user_id: this.$store.state.userInfo.user_id
       }))
-      step(this)
-      this.$store.commit('setStateToNext', { switchState: this.$store.state.flowStateEnum.preTest, delay: 2000 });
+      if (isExcluded) this.$store.commit('setState', { newState: this.$store.state.flowStateEnum.end, delay: 2000 });
+      else this.$store.commit('setStateToNext', { switchState: this.$store.state.flowStateEnum.preTest, delay: 2000 });
     },
     showError(msg) {
       this.errorMessage = msg;

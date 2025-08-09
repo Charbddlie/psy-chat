@@ -98,8 +98,8 @@ export default {
   data() {
     return {
       check: true,
-      step: 3,
-      // step 0: 情感量表
+      step: 1,
+      // step 1: 情感量表
       affectQuestions: [
         { text: "兴奋的" },
         { text: "热情的" },
@@ -343,12 +343,14 @@ export default {
         pad(now.getMinutes()) + ':' +
         pad(now.getSeconds());
       
+      console.log(this.affectAnswers)
       const affectPayload = {
         questions: this.affectQuestions,
         answers: this.affectAnswers,
         positive: this.affectAnswers.slice(0, 4).reduce((sum, val) => sum + val, 0) / this.affectAnswers.length * 2,
         negative: this.affectAnswers.slice(4, 8).reduce((sum, val) => sum + val, 0) / this.affectAnswers.length * 2,
       }
+      console.log(this.subjectiveAnswers)
       const subjectivePayload = {
         questions: this.subjectiveQuestions,
         answers: this.subjectiveAnswers,
