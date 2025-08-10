@@ -18,7 +18,7 @@ header = [
     "知识前测_6",
     "知识前测_7",
     "知识前测_8",
-    "根据知识前测是否纳入(是/否）",
+    "根据知识前测是否纳入(是/否)",
     "ai经验_1",
     "ai经验_2",
     "ai经验_3",
@@ -156,7 +156,7 @@ def avg_by_index(lst, idxs):
     return round(sum(vals) / len(vals), 2)
 
 def sum_chat_time(chat_path):
-    # 计算总交互时长(秒）
+    # 计算总交互时长(秒)
     import datetime
     times = []
     if not os.path.exists(chat_path): return "null"
@@ -212,6 +212,7 @@ for d in os.listdir("./log"):
     else:
         with open(final_path, encoding="utf-8") as f:
             final = json.load(f)
+    if not (info or pre or post or final): continue
 
     # 1. 基本信息
     row = []
@@ -230,7 +231,7 @@ for d in os.listdir("./log"):
     row += safe_list(pre_knowledge, 8)
 
     # 3. 根据知识前测是否纳入
-    excluded = pre.get("excluded", False)
+    excluded = pre.get("excluded", True)
     if excluded:
         row.append("否")
     else:
@@ -267,7 +268,7 @@ for d in os.listdir("./log"):
     row.append(post_pos)
     row.append(post_neg)
 
-    # 8. 拟人化感知(主观感受 subjective）
+    # 8. 拟人化感知(主观感受 subjective)
     subj = post.get("subjective", {}).get("answers", [])
     row += safe_list(subj, 18)
     # 9. 各类主观感受平均分
@@ -367,6 +368,42 @@ for i, row in enumerate(rows):
             except Exception:
                 new_row.append(val)
     rows[i] = new_row
+
+# 找到“根据知识前测是否纳入(是/否)”在header中的idx
+include_idx = None
+for i, h in enumerate(header):
+    if "根据知识前测是否纳入" in h:
+        include_idx = i
+        break
+
+if include_idx is not None:
+    # 写入仅纳入（是）的样本的TSV (UTF-8)
+    skip_count_include_utf8 = 0
+    with open("log/summary_include_utf8.tsv", "w", encoding="utf-8", newline="") as f:
+        writer = csv.writer(f, delimiter="\t")
+        writer.writerow(header)
+        for row in rows:
+            if len(row) > include_idx and row[include_idx] == "是":
+                try:
+                    writer.writerow(row)
+                except Exception as e:
+                    print(f"[INCLUDE-UTF8] 跳过行: {row}，错误: {e}")
+                    skip_count_include_utf8 += 1
+    print(f"[INCLUDE-UTF8] 共跳过 {skip_count_include_utf8} 行")
+
+    # 写入仅纳入（是）的样本的TSV (GBK)
+    skip_count_include_gbk = 0
+    with open("log/summary_include_gbk.tsv", "w", encoding="gbk", newline="") as f:
+        writer = csv.writer(f, delimiter="\t")
+        writer.writerow(header)
+        for row in rows:
+            if len(row) > include_idx and row[include_idx] == "是":
+                try:
+                    writer.writerow(row)
+                except Exception as e:
+                    print(f"[INCLUDE-GBK] 跳过行: {row}，错误: {e}")
+                    skip_count_include_gbk += 1
+    print(f"[INCLUDE-GBK] 共跳过 {skip_count_include_gbk} 行")
 
 # 3. 写入TSV (UTF-8)
 skip_count_utf8 = 0
