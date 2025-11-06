@@ -7,6 +7,10 @@
   ## 启动
 </div>
 
+## 环境准备
+只部署需要安装python，如果开发还需要安装node，然后进入psy-front执行npm install
+
+## 运行
 ```
 cd backend
 python main.py
